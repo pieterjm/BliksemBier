@@ -1,0 +1,37 @@
+<h1>Instellen BliksemBier</h1>
+
+<ol>
+<li>Zet spanning op BliksemBier en druk op de knop als de led brand: de led gaat uit.</li>
+<li>Verbind met het Wi-Fi netwerk 'BliksemBier'.</li>
+<li>Werk onderstaande gegevens bij en klik op 'Opslaan'.</li>
+</ol>
+
+<FORM METHOD="GET" action="http://192.168.4.1/wifisave">
+  <h4>Wi-Fi configuratie</h4>
+  
+  <p>Wi-Fi SSID: <input name="s" value=""></p>
+  <p>Wi-Fi wactwoord: <input name="p" value=""></p>
+  <h4>WebSocket URL</h4>
+  <input name="wsurl" size="100" value=""><br>
+  <p>
+    De WebSocket URL is de verbinding via welke de biertap bericht krijgt van een geslaagde betaling. De betaling wordt verwerkt door LNbits via een LNURLdevice. Om een WebSocket URL te krijgen, doorloop de volgende stappen:
+    <ol>
+      <li>Maak een wallet aan op de demo server van LNbits (https://legend.lnbits.com/).</li>
+      <li>Schakel de LNURLDevice extension on (Extensions onder het kopje Extensions in LNbits).</li>
+      <li>Kies onder LNURLDevice in LNbits, en maak een nieuw LNURLDevice aan.</li>
+      <li>Onder de LNURLDevice settings staat de WebSocket URL. Vul deze hierboven in.</li>
+    </ol>
+  </p>     
+  <input name="max_wait" value="20000"><br>
+  <input name="max_tap" value="7000"><br>
+  <h4>Servohoek, tap open</h4>
+  <p>Servohoek, tap open: <input name="servo_open" value="30">
+        De hoek (in graden) van de servo als de tap open is. Normale waarde is 30 graden.
+  </p>
+  <h4>Servohoek, tap dicht</h4>
+  <p>Servohoek, tap dicht: <input name="servo_closed" value="180">
+    De hoek (in graden) van de servo als de tap dicht is. Normale waarde is 180 graden
+  </p>
+  
+  <input type=submit name="Opslaan">
+</form
