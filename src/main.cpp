@@ -38,16 +38,15 @@ bool gotbeer = true;
 bool shouldSaveConfig = false;
 
 // config values and their defaults
-char config_websocket_url[512] = "ws://legend.lnbits.com/api/v1/ws/DGrCiY5fGp6ZXMHDZ66aE8";
-//ws://lnbits.meulenhoff.org/api/v1/ws/Tm3SNAmq88zsVb5mr7chtQ";
+char config_websocket_url[512] = "";
 char config_max_wait[10] = "20000";
 char config_max_tap[10] = "9000";
 char config_servo_open[10] = "25";
 char config_servo_closed[10] = "180";
 
 // runtime parameters, assigning these parameters should not be
-String websocket_host = "legend.lnbits.com";
-String websocket_path = "/api/v1/ws/DGrCiY5fGp6ZXMHDZ66aE8";
+String websocket_host = "";
+String websocket_path = "";
 long unsigned int max_wait = String(config_max_wait).toInt();
 long unsigned int max_tap = String(config_max_tap).toInt();
 int servo_open = String(config_servo_open).toInt();
@@ -151,15 +150,13 @@ void webSocketEventHandler(WStype_t type, uint8_t *payload, size_t length)
     }
 
     // Check if the payload is the beer command
-    if ( String((char *)payload) == WSC_BEER_COMMAND ) {
-      if ( bDebugMode ) {
-        Serial.println("Pouring beer from websocker");
-      }
-      if ( beer() ) {
-        Serial.println("Beer from websocket completed");
-      } else {
-        Serial.println("Beer from websocket not allowed. Customer could be wanting money back!");
-      }
+    if ( bDebugMode ) {
+      Serial.println("Pouring beer from websocker");
+    }
+    if ( beer() ) {
+      Serial.println("Beer from websocket completed");
+    } else {
+      Serial.println("Beer from websocket not allowed. Customer could be wanting money back!");
     }
     break;
   case WStype_BIN:
