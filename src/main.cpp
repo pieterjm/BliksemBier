@@ -1,11 +1,8 @@
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
 #include <LittleFS.h>
 #include <WebSocketsClient.h>
 #include <Hash.h>
 #include <DNSServer.h>
-#include <ESP8266WebServer.h>
 #include <WiFiManager.h> 
 #include "Servo.h"
 #include <ArduinoJson.h>
@@ -247,7 +244,7 @@ void loadConfig() {
 
   File file = LittleFS.open("/config.json","r");
   if ( file ) {
-    DynamicJsonDocument config(2048);
+    DynamicJsonDocument config(3000);
     DeserializationError error = deserializeJson(config, file);
     Serial.println(error.c_str());
     file.close();
@@ -332,17 +329,19 @@ void flashLed() {
 
 // WiFiManager requiring config save callback
 void saveConfigCallback () {
+  Serial.println("SaveConfigCallback got message");
 	shouldSaveConfig = true;
 }
 
 void setup()
 {
+  // Initialise serial port and print welcome message
+  Serial.begin(115200);
+
   beerServo.write(servo_closed); // close servo valve
   beerServo.attach(SERVO_PIN);
   beerServo.write(servo_closed); // close servo valve
   
-  // Initialise serial port and print welcome message
-  Serial.begin(115200);
 
   // initialize input button and LED
   pinMode(LED_PIN, OUTPUT); 
@@ -379,21 +378,23 @@ void setup()
   Serial.println("Initializing wifi manager");
   delay(1000);
   WiFiManager wifiManager;
-  WiFiManagerParameter wm_wsurl(JSON_WSURL,"WebSocket URL",config_websocket_url,512);
-  WiFiManagerParameter wm_max_wait(JSON_MAX_WAIT,"Max wait (ms)",config_max_wait,10);
-  WiFiManagerParameter wm_max_tap(JSON_MAX_TAP,"Max tap (ms)",config_max_tap,10);
-  WiFiManagerParameter wm_servo_open(JSON_SERVO_OPEN,"Tap open (deg)",config_servo_open,10);
-  WiFiManagerParameter wm_servo_closed(JSON_SERVO_CLOSED,"Tap closed (deg)",config_servo_closed,10);
+ // WiFiManagerParameter wm_wsurl(JSON_WSURL,"WebSocket URL",config_websocket_url,512);
+//  WiFiManagerParameter wm_max_wait(JSON_MAX_WAIT,"Max wait (ms)",config_max_wait,10);
+//  WiFiManagerParameter wm_max_tap(JSON_MAX_TAP,"Max tap (ms)",config_max_tap,10);
+//  WiFiManagerParameter wm_servo_open(JSON_SERVO_OPEN,"Tap open (deg)",config_servo_open,10);
+//  WiFiManagerParameter wm_servo_closed(JSON_SERVO_CLOSED,"Tap closed (deg)",config_servo_closed,10);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
-  wifiManager.addParameter(&wm_wsurl);
-  wifiManager.addParameter(&wm_max_wait);
-  wifiManager.addParameter(&wm_max_tap);
-  wifiManager.addParameter(&wm_servo_open);
-  wifiManager.addParameter(&wm_servo_closed);
-  wifiManager.setConnectTimeout(10);
+//  wifiManager.addParameter(&wm_wsurl);
+//  wifiManager.addParameter(&wm_max_wait);
+//  wifiManager.addParameter(&wm_max_tap);
+//  wifiManager.addParameter(&wm_servo_open);
+//  wifiManager.addParameter(&wm_servo_closed);
+//  wifiManager.setConnectTimeout(60);
+//  wifiManager.setDebugOutput(true);
 
   Serial.println("After wifi manager configuration");
   delay(1000);
+
 
   // Start config portal if button pressed during boot
   if ( bResetWifi ) {
@@ -401,9 +402,15 @@ void setup()
     delay(1000);
     wifiManager.startConfigPortal(WIFI_SSID);
   } else {
-    Serial.println("Autoconnect");
+    Serial.println("Line 404: Autoconnect");
+    //wifiManager.autoConnect(WIFI_SSID);
+    Serial.println(  WiFi.SSID());
+    Serial.println(  WiFi.psk());
+    delay(2000);
+    WiFi.begin(WiFi.SSID(),WiFi.psk());
+    Serial.println("bla");
+    //wifiManager.autoConnect();
     delay(1000);
-    wifiManager.autoConnect(WIFI_SSID);
   }
 
   Serial.println("After wifi manager");
@@ -413,15 +420,15 @@ void setup()
     delay(1000);
 
     // get values from config
-    strcpy(config_websocket_url,wm_wsurl.getValue());
-    strcpy(config_max_tap,wm_max_tap.getValue());
-    strcpy(config_max_wait,wm_max_wait.getValue());
-    strcpy(config_servo_open,wm_servo_open.getValue());
-    strcpy(config_servo_closed,wm_servo_closed.getValue());
+//    strcpy(config_websocket_url,wm_wsurl.getValue());
+//    strcpy(config_max_tap,wm_max_tap.getValue());
+//    strcpy(config_max_wait,wm_max_wait.getValue());
+//    strcpy(config_servo_open,wm_servo_open.getValue());
+//    strcpy(config_servo_closed,wm_servo_closed.getValue());
     
 
     // create json document and set variables
-    DynamicJsonDocument config(2048);
+    DynamicJsonDocument config(3000);
 		config[JSON_WSURL] = config_websocket_url;
     config[JSON_MAX_WAIT] = config_max_wait;
     config[JSON_MAX_TAP] = config_max_tap;
