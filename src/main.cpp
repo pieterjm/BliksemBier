@@ -1,490 +1,392 @@
 #include <Arduino.h>
-#include <LittleFS.h>
+#include <ArduinoOTA.h>
+#include <esp32_smartdisplay.h>
+#include "bliksembier.h"
+#include "ui.h"
+#include <ESP32Servo.h>
 #include <WebSocketsClient.h>
-#include <Hash.h>
-#include <DNSServer.h>
-#include <WiFiManager.h> 
-#include "Servo.h"
+#include <LittleFS.h>
 #include <ArduinoJson.h>
-  
-FS &FlashFS = LittleFS; 
+#include <HTTPClient.h>
 
 
-#define SERVO_PIN 5 // D1
-#define LED_PIN  4   // D2
-#define BUTTON_PIN 0 // D3
+// config variables
+int config_servo_back = 180;
+int config_servo_close = 180;
+int config_servo_open = 70;
+String config_wifi_ssid = "";
+String config_wifi_pwd = "";
+String config_lnurldeviceid = "";
+String config_invoicekey = "";
+String config_adminkey = "";
+String config_wallet = "";
+String config_lnurl = "";
+int config_tap_duration = 8000;
+String config_pin = String(CONFIG_PIN);
+String config_cfgserver = "www.meulenhoff.org";
+String config_deviceid = "";
 
-#define JSON_WSURL "wsurl"
-#define JSON_MAX_WAIT "max_wait"
-#define JSON_MAX_TAP "max_tap"
-#define JSON_SERVO_OPEN "servo_open"
-#define JSON_SERVO_CLOSED "servo_closed"
+// two booleans to pass instructions to the main loop
+bool bWiFiReconnect = true;
+bool bLoadDeviceSettings = false;
+bool bWebSocketReconnect = false;
+String config_wshost = "";
+String config_wspath = "";
 
-// beer servo PIN
-Servo beerServo;
-bool gotbeer = true;
-
-// Strings
-#define WIFI_SSID "BliksemBier"
-#define WIFI_PSK ""
-#define ERROR_UNKNOWN_COMMAND_ARGUMENT "Unknown command argument."
-#define ERROR_UNKNOWN_COMMAND "Unknown command."
-#define ERROR_ACCESS_DENIED "Not allowed."
-#define WSC_BEER_COMMAND "1-1"
-
-bool shouldSaveConfig = false;
-
-// config values and their defaults
-char config_websocket_url[512] = "";
-char config_max_wait[10] = "20000";
-char config_max_tap[10] = "9000";
-char config_servo_open[10] = "25";
-char config_servo_closed[10] = "180";
-
-// runtime parameters, assigning these parameters should not be
-String websocket_host = "";
-String websocket_path = "";
-long unsigned int max_wait = String(config_max_wait).toInt();
-long unsigned int max_tap = String(config_max_tap).toInt();
-int servo_open = String(config_servo_open).toInt();
-int servo_closed = String(config_servo_closed).toInt();
-
-
-bool bDebugMode = true; // verbose debug mode
-
-
-#define BEER_STATE_UNAVAILABLE 0    // Beer tap not ready
-#define BEER_STATE_AVAILABLE   1    // Beer tap ready to pour a beer
-#define BEER_STATE_POURING     2    // Beer tap pouring beer
-int beerState = BEER_STATE_UNAVAILABLE;
-
-// led blink interval when available for pouring beer
-#define LED_BLINK_OFF_INTERVAL 5000
-#define LED_BLINK_ON_INTERVAL  100
-
-
-const uint8_t LED_ACTIVE = LOW;
-
-ESP8266WebServer server;
+Servo servo;
 WebSocketsClient webSocket;
+lv_obj_t *ui_QrcodeLnurl = NULL; // the QR code object
+lv_obj_t *ui_QrcodeWallet = NULL; 
 
-// this function pours some beer
-bool beer()
-{
-  if ( beerState == BEER_STATE_AVAILABLE ) {
-    beerState = BEER_STATE_POURING;
-  } else {
+// defines for the config file
+#define BLIKSEMBIER_CFG_SSID "ssid"
+#define BLIKSEMBIER_CFG_WIFIPASS "wifipassword"
+#define BLIKSEMBIER_CFG_SERVO_BACK "servoback"
+#define BLIKSEMBIER_CFG_SERVO_CLOSE "servoclose"
+#define BLIKSEMBIER_CFG_SERVO_OPEN "servoopen"
+#define BLIKSEMBIER_CFG_TAP_DURATION "tapduration"
+#define BLIKSEMBIER_CFG_CFGSERVER "cfgserver"
+#define BLIKSEMBIER_CFG_DEVICEID "deviceid"
+#define BLIKSEMBIER_CFG_PIN "pin"
+
+// defines for the QR code
+#define QRCODE_PIXEL_SIZE 3
+#define QRCODE_X_OFFSET 10
+#define QRCODE_Y_OFFSET 10
+
+void beerClose() {
+  servo.write(config_servo_close);
+}
+
+void beerOpen() {
+  servo.write(config_servo_open);
+}
+
+void beerClean() {
+  servo.write(config_servo_back);
+}
+
+void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,const char *configserver) {
+  config_wifi_ssid = String(ssid);
+  config_wifi_pwd = String(pwd);
+  config_deviceid = String(deviceid);
+  config_cfgserver = String(configserver);
+  bWiFiReconnect = true;
+  saveConfig();
+}
+
+void saveTuning(int32_t servoBack, int32_t servoClosed, int32_t servoOpen, int32_t tapDuration) {
+  config_servo_back = servoBack;
+  config_servo_close = servoClosed;
+  config_servo_open = servoOpen;
+  config_tap_duration = tapDuration;
+  saveConfig();
+}
+
+void updatePIN(const char *pin) {
+  config_pin = String(pin);
+  saveConfig();
+}
+
+  
+bool checkPIN(const char *pin) {
+  if ( pin == NULL ) {
     return false;
   }
-
-  // turn on led
-  digitalWrite(LED_PIN, HIGH);
-  
-  while ( digitalRead(BUTTON_PIN) != LOW ) {
-    delay(50);
-  }      
-  unsigned long wait_millis = millis() + max_wait;
-  unsigned long tap_millis = 0;
-  beerServo.write(servo_open);
-  int state = LOW;
-  while (( millis() < wait_millis ) && ( tap_millis < max_tap)) {
-    int newstate = digitalRead(BUTTON_PIN);
-    if ( state != newstate ) {
-      if ( newstate == LOW ) {
-        beerServo.write(servo_open);
-      } else {
-        beerServo.write(servo_closed);
-      }
-      state = newstate;
-    }
-    if ( state == LOW ) {
-      tap_millis += 50;
-    }
-    delay(100);
+  if ( String(pin).equals(config_pin) ) {
+    return true;
   }
-  digitalWrite(LED_PIN,LOW);  
-  beerServo.write(servo_closed);
-  digitalWrite(LED_PIN,LOW);  
-
-  
-  // turn off led
-  beerState = BEER_STATE_AVAILABLE;
-
-  return true;
+  return false;
 }
 
+bool getWifiStatus() {
+  if ( WiFi.status() == WL_CONNECTED ) {
+    return true;
+  } 
+  return false;
+}
 
-// callback function for handling websocket events
-void webSocketEventHandler(WStype_t type, uint8_t *payload, size_t length) 
+bool getWebSocketStatus() {
+  return webSocket.isConnected();
+}
+
+void beerTimerProgress(lv_timer_t * timer)
 {
-  switch (type)
-  {
-  case WStype_DISCONNECTED:
-    if ( bDebugMode ) {
-      Serial.printf("[WSc] Disconnected!\n");
-    }
-
-    // set beerState to available and blink led slowly
-    beerState = BEER_STATE_UNAVAILABLE;
-
-    break;
-  case WStype_CONNECTED:
-  {
-    if ( bDebugMode ) {
-      Serial.printf("[WSc] Connected to url: %s\n", payload);
-      Serial.println("[WSc] SENT: Connected");
-    }
-
-    // set beerState to available and blink led slowly
-    beerState = BEER_STATE_AVAILABLE;
-
-    webSocket.sendTXT("Connected");
+  int progress = lv_bar_get_value(ui_BarBierProgress);
+  progress += 10;
+  if ( progress > 100 ) {
+    progress = 100;
   }
-  break;
-  case WStype_TEXT:
-    if ( bDebugMode ) {
-      Serial.printf("[WSc] RESPONSE: %s\n", payload);
-    }
+  lv_bar_set_value(ui_BarBierProgress,progress, LV_ANIM_OFF);
 
-    // Check if the payload is the beer command
-    if ( bDebugMode ) {
-      Serial.println("Pouring beer from websocker");
-    }
-    if ( beer() ) {
-      Serial.println("Beer from websocket completed");
-    } else {
-      Serial.println("Beer from websocket not allowed. Customer could be wanting money back!");
-    }
-    break;
-  case WStype_BIN:
-    if ( bDebugMode ) {
-      Serial.printf("[WSc] get binary length: %u\n", length);
-    }
-    break;
-  case WStype_PING:
-    // pong will be send automatically
-    //Serial.printf("[WSc] get ping\n");
-    break;
-  case WStype_PONG:
-    // answer to a ping we send
-    //Serial.printf("[WSc] get pong\n");
-    break;
-  case WStype_ERROR:
-    if ( bDebugMode ) {
-      Serial.println("]Wsc] Got error");
-    }
-    break;
-  default:
-    break;
+  if ( progress >=  100 ) {
+    beerClose();
+    lv_disp_load_scr(ui_ScreenMain);	  
   }
+} 
+
+void beer()
+{
+  lv_bar_set_value(ui_BarBierProgress,0,LV_ANIM_OFF);
+	lv_disp_load_scr(ui_ScreenBierFlowing);	
+	//lv_timer_t *timer = lv_timer_create(beerTimerFinished, config_tap_duration, NULL);
+  lv_timer_t *timer = lv_timer_create(beerTimerProgress, config_tap_duration / 10, NULL);
+  lv_timer_set_repeat_count(timer,10);
+	beerOpen();    
 }
 
-// get content type based on extension
-String getContentType(String filename) {
-  if (filename.endsWith(".html")) return "text/html";
-  else if (filename.endsWith(".css")) return "text/css";
-  else if (filename.endsWith(".gif")) return "image/gif";
-  else if (filename.endsWith(".png")) return "image/png";
-  else if (filename.endsWith(".js")) return "application/javascript";
-  else if (filename.endsWith(".ico")) return "image/x-icon";
-  else if (filename.endsWith(".gz")) return "application/x-gzip";
-  return "text/plain";
-}
-
-// utility function for the webserver, provides files from the data directory
-void handleFileRequest(String path) {
-  if ( bDebugMode ) {
-    Serial.println("Request for resource: " + path);
-  }
-
-  String contentType = getContentType(path);
-  File file = LittleFS.open(path,"r");
-  if ( file ) {
-    server.streamFile(file, contentType);                 //Send it to the client
-    file.close();                                                  //Close the file again
+void setUIStatus(bool bWiFiConnected,bool bConfigLoaded, bool bWebSocketConnected) {
+  if ( bWebSocketConnected ) {
+    lv_label_set_text(ui_LabelAboutStatus,"WebSocket connected");
+    lv_label_set_text(ui_LabelMainWebSocketStatus,"WS OK");
+    lv_label_set_text(ui_LabelMainWiFiStatus,"Wi-Fi OK");
+    lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi connected\nConfiguration loaded\nWebSocket connected");
+    lv_obj_clear_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
+  } else if ( bConfigLoaded  ) {
+    lv_label_set_text(ui_LabelAboutStatus,"Configuration loaded");
+    lv_label_set_text(ui_LabelMainWebSocketStatus,"No WS");
+    lv_label_set_text(ui_LabelMainWiFiStatus,"Wi-Fi OK");
+    lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi connected\nConfiguration loaded\nWebSocket not connected");
+    lv_obj_add_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
+  } else if ( bWiFiConnected ) {
+    lv_label_set_text(ui_LabelAboutStatus,"Wi-Fi Connected");
+    lv_label_set_text(ui_LabelMainWebSocketStatus,"No WS");
+    lv_label_set_text(ui_LabelMainWiFiStatus,"Wi-Fi OK");
+    lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi connected\nConfiguration not loaded\nWebSocket not connected");
+    lv_obj_add_flag(ui_QrcodeLnurl, LV_OBJ_FLAG_HIDDEN);
   } else {
-    Serial.println("File does not exist");
-    server.send(404, "text/plain", "404: Not Found");  
+    lv_label_set_text(ui_LabelAboutStatus,"Wi-Fi not connected");
+    lv_label_set_text(ui_LabelMainWebSocketStatus,"No WS");
+    lv_label_set_text(ui_LabelMainWiFiStatus,"No Wi-Fi");
+    lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi not connected\nConfiguration not loaded\nWebSocket not connected");
+    lv_obj_add_flag(ui_QrcodeLnurl, LV_OBJ_FLAG_HIDDEN);
   }
 }
 
-// web server callback for current status, returns a JSON document with current status
-void handleWebserverStatus() {
-  switch ( beerState ) {
-    case BEER_STATE_UNAVAILABLE:
-      server.send(200,"application/json","{\"status\":\"unavailable\"}");
+void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+  switch(type) {
+    case WStype_DISCONNECTED:
+      if ( WiFi.status() == WL_CONNECTED ) {
+        setUIStatus(true,true,false);                  
+      } else {
+        setUIStatus(false,false,false);
+      }
       break;
-    case BEER_STATE_AVAILABLE:
-      server.send(200,"application/json","{\"status\":\"available\"}");
+    case WStype_CONNECTED:
+      webSocket.sendTXT("Connected");
+      setUIStatus(true,true,true);
       break;
-    case BEER_STATE_POURING:
-      server.send(200,"application/json","{\"status\":\"pouring\"}");
+    case WStype_TEXT:
+      beer();
       break;
     default:
-      server.send(200,"application/json","{\"status\":\"unknown\"}");
-      break;
+			break;
   }
 }
 
-// web server callback for beer
-void handleWebserverBeer() {
-  if ( gotbeer ) { 
-    gotbeer = false;
-    beer();
-    server.send(200,"text/html","Here you go!");
-  } else {
-    server.send(200,"text/html","Out of beer");  
-  }
+void myDelay(uint32_t ms) {
+  delay(ms);
 }
 
-/* load config from config.json and fall back to defaults in case of trouble */
 void loadConfig() {
-  // set all parameters to their defaults
+  File file = LittleFS.open("/config.json", "r");
+  if (file) {
 
-
-  File file = LittleFS.open("/config.json","r");
-  if ( file ) {
-    DynamicJsonDocument config(3000);
-    DeserializationError error = deserializeJson(config, file);
-    Serial.println(error.c_str());
+    //  StaticJsonDocument<2000> doc;
+    DynamicJsonDocument doc(2000);
+    String content = file.readString();
+    DeserializationError error = deserializeJson(doc, content);
     file.close();
-    
-    if ( config.containsKey(JSON_MAX_WAIT)) {
-      String tmp = config[JSON_MAX_WAIT];
-      strcpy(config_max_wait,tmp.c_str());
-      max_wait = tmp.toInt();
-      Serial.print("Max wait set to: ");
-      Serial.println(max_wait);
-    }
-    if ( config.containsKey(JSON_MAX_TAP)) {
-      String tmp = config[JSON_MAX_TAP];
-      strcpy(config_max_tap,tmp.c_str());
-      max_tap = tmp.toInt();      
-      Serial.print("Max tap set to: ");
-      Serial.println(max_tap);
-    }
-    if ( config.containsKey(JSON_SERVO_OPEN)) {
-      String tmp = config[JSON_SERVO_OPEN];
-      strcpy(config_servo_open,tmp.c_str());
-      servo_open = tmp.toInt();
-      Serial.print("Servo open set to: ");
-      Serial.println(servo_open);
-    }
-    if ( config.containsKey(JSON_SERVO_CLOSED)) {
-      String tmp = config[JSON_SERVO_CLOSED];
-      strcpy(config_servo_closed,tmp.c_str());
-      servo_closed = tmp.toInt();
-      Serial.print("Servo closed set to: ");
-      Serial.println(servo_closed);
-    }
-    if ( config.containsKey("wsurl") ) {  
-      String wsurl = config["wsurl"];
-      strcpy(config_websocket_url,wsurl.c_str());
-      Serial.print("Websocket URL: ");
-      Serial.println(wsurl);
 
-      if ( wsurl.startsWith("ws://") ) {
-        wsurl = wsurl.substring(5);
-      } else if ( wsurl.startsWith("wss://") ) {
-        wsurl = wsurl.substring(6);
-      } else {
-        return;
+    if ( error.code() ==  DeserializationError::Ok ) {
+
+      JsonArray arr = doc.as<JsonArray>();
+      for (JsonObject obj: arr) {
+        String name = obj["name"];
+        String value = obj["value"];
+
+        if ( name == BLIKSEMBIER_CFG_SSID ) {
+          config_wifi_ssid = String(value);
+        } else if ( name == BLIKSEMBIER_CFG_WIFIPASS ) {
+          config_wifi_pwd = String(value);
+        } else if ( name == BLIKSEMBIER_CFG_SERVO_CLOSE ) {
+          config_servo_close = String(value).toInt();
+        } else if ( name == BLIKSEMBIER_CFG_SERVO_OPEN ) {
+          config_servo_open = String(value).toInt();
+        } else if ( name == BLIKSEMBIER_CFG_SERVO_BACK ) {
+          config_servo_back = String(value).toInt();
+        } else if ( name == BLIKSEMBIER_CFG_CFGSERVER ) {
+          config_cfgserver = String(value);     
+        } else if ( name == BLIKSEMBIER_CFG_TAP_DURATION ) {
+          config_tap_duration = String(value).toInt();
+        } else if (name == BLIKSEMBIER_CFG_PIN ) {
+          config_pin = String(value);
+        } else if ( name == BLIKSEMBIER_CFG_DEVICEID ) {
+          config_deviceid = String(value);
+        }
       }
-      int index = wsurl.indexOf("/");
-      if ( index == -1 ) {
-        return;
-      }
-      websocket_host = wsurl.substring(0,index);
-      websocket_path = wsurl.substring(index);
-      Serial.print("Websocket host: ");
-      Serial.println(websocket_host);
-      Serial.print("Websocket Path: ");
-      Serial.println(websocket_path);
-
     }
-  
-
-  }
-}
-  
-
-// blink the led in a non-blocking way
-void flashLed() {
-  static long nextMillis = 0;
-  static bool _ledState = LOW;
-
-  // we slowly flash the led when in a good state, ready for beer serving
-  long currentMillis = millis();
-  if ( currentMillis > nextMillis ) {
-    if ( _ledState == LOW ) {
-      _ledState = HIGH;
-      nextMillis = currentMillis + LED_BLINK_ON_INTERVAL;
-    } else {
-      _ledState = LOW;
-      nextMillis = currentMillis + LED_BLINK_OFF_INTERVAL;
-    }
-    digitalWrite(LED_PIN, _ledState);
   }
 }
 
-// WiFiManager requiring config save callback
-void saveConfigCallback () {
-  Serial.println("SaveConfigCallback got message");
-	shouldSaveConfig = true;
+void saveConfig() {
+  File file = LittleFS.open("/config.json", "w");
+  if (!file) {
+    return;
+  }
+
+  //StaticJsonDocument<2000> doc;
+  DynamicJsonDocument doc(2000);
+
+  doc[0]["name"] = BLIKSEMBIER_CFG_SSID;
+  doc[0]["value"] = config_wifi_ssid;    
+  doc[1]["name"] = BLIKSEMBIER_CFG_WIFIPASS;
+  doc[1]["value"]= config_wifi_pwd;
+  doc[2]["name"] = BLIKSEMBIER_CFG_SERVO_BACK;
+  doc[2]["value"] = config_servo_back;
+  doc[3]["name"] = BLIKSEMBIER_CFG_SERVO_CLOSE;
+  doc[3]["value"] = config_servo_close;
+  doc[4]["name"] = BLIKSEMBIER_CFG_SERVO_OPEN;
+  doc[4]["value"] = config_servo_open;
+  doc[5]["name"] = BLIKSEMBIER_CFG_TAP_DURATION;
+  doc[5]["value"] = config_tap_duration;
+  doc[6]["name"] = BLIKSEMBIER_CFG_CFGSERVER;
+  doc[6]["value"] = config_cfgserver;
+  doc[7]["name"] = BLIKSEMBIER_CFG_PIN;
+  doc[7]["value"] = config_pin;
+  doc[8]["name"] = BLIKSEMBIER_CFG_DEVICEID;
+  doc[8]["value"] = config_deviceid;
+
+  String output = "";
+  serializeJson(doc, output);
+  serializeJson(doc, file);
+  file.close();
 }
+
+void getLNURLSettings(String deviceid) 
+{  
+  // clear path
+  config_wspath = "";
+  config_wshost = "";
+
+  String config_url = "https://";
+  config_url += config_cfgserver;
+  config_url += "/.well-known/bliksembier/";
+  config_url += deviceid;
+  config_url += ".json";
+
+  HTTPClient http;
+  http.begin(config_url);
+  int statusCode = http.GET();
+  if ( statusCode != HTTP_CODE_OK ) {
+    return;
+  }  
+
+  // obtain the payload
+  String payload = http.getString();                
+  http.end();
+
+  StaticJsonDocument<2000> doc;
+  DeserializationError error = deserializeJson(doc, payload);
+  if ( error.code() ==  DeserializationError::Ok ) {
+    String id = doc["id"];
+    String host = doc["host"];
+    String lnurl = doc["lnurl"];
+    config_wshost = host;
+    config_wspath = "/api/v1/ws/" + id;
+    lv_qrcode_update(ui_QrcodeLnurl, lnurl.c_str(), lnurl.length());
+  }
+}
+
 
 void setup()
 {
-  // Initialise serial port and print welcome message
+  // put your setup code here, to run once:
   Serial.begin(115200);
-
-  beerServo.write(servo_closed); // close servo valve
-  beerServo.attach(SERVO_PIN);
-  beerServo.write(servo_closed); // close servo valve
-  
-
-  // initialize input button and LED
-  pinMode(LED_PIN, OUTPUT); 
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-
-  // initialize flash storage
-  Serial.println("Initializing flash storage");
-  if ( !LittleFS.begin() ) {
-    Serial.println("Could not start Flash Filesystem");
-  }
-
-  // wait 10 seconds, if there is a button press, reset wifi
   delay(2000);
-  digitalWrite(LED_PIN, HIGH);  // turn off the LED
-  bool bResetWifi = false;
-  for(int i=0;(i<50);i++) {
-    if ( digitalRead(BUTTON_PIN) == LOW ) {
-      bResetWifi = true;
-      break;
-    }
-    delay(100);
-  }
-  digitalWrite(LED_PIN, LOW);  // turn off the LED
 
-  // load config
-  Serial.println("Loading config");
-  delay(1000);
+
+
+  LittleFS.begin(true);
+
+
+  smartdisplay_init();
+  ui_init();
+
+  lv_color_t c = lv_color_hex(0x000000); 
+  lv_color32_t rgb;
+  rgb.full = lv_color_to32(c);
+  smartdisplay_set_led_color(rgb);
+
+
+  // set UI components from config
   loadConfig();
 
-
-
-  // Create wifi manager
+  // set the values of the sliders
+  lv_slider_set_value(ui_SliderConfigServoBack,config_servo_back,LV_ANIM_OFF);
+  lv_slider_set_value(ui_SliderConfigServoClosed,config_servo_close,LV_ANIM_OFF);
+  lv_slider_set_value(ui_SliderConfigServoOpen,config_servo_open,LV_ANIM_OFF);
+  lv_slider_set_value(ui_SliderConfigTapDuration,config_tap_duration,LV_ANIM_OFF);
   
-  Serial.println("Initializing wifi manager");
-  delay(1000);
-  WiFiManager wifiManager;
- // WiFiManagerParameter wm_wsurl(JSON_WSURL,"WebSocket URL",config_websocket_url,512);
-//  WiFiManagerParameter wm_max_wait(JSON_MAX_WAIT,"Max wait (ms)",config_max_wait,10);
-//  WiFiManagerParameter wm_max_tap(JSON_MAX_TAP,"Max tap (ms)",config_max_tap,10);
-//  WiFiManagerParameter wm_servo_open(JSON_SERVO_OPEN,"Tap open (deg)",config_servo_open,10);
-//  WiFiManagerParameter wm_servo_closed(JSON_SERVO_CLOSED,"Tap closed (deg)",config_servo_closed,10);
-  wifiManager.setSaveConfigCallback(saveConfigCallback);
-//  wifiManager.addParameter(&wm_wsurl);
-//  wifiManager.addParameter(&wm_max_wait);
-//  wifiManager.addParameter(&wm_max_tap);
-//  wifiManager.addParameter(&wm_servo_open);
-//  wifiManager.addParameter(&wm_servo_closed);
-//  wifiManager.setConnectTimeout(60);
-//  wifiManager.setDebugOutput(true);
+  // set the current valuues of the labels
+  lv_label_set_text_fmt(ui_LabelConfigServoBack,"%d",config_servo_back);
+  lv_label_set_text_fmt(ui_LabelConfigServoClosed,"%d",config_servo_close);
+  lv_label_set_text_fmt(ui_LabelConfigServoOpen,"%d",config_servo_open);
+  lv_label_set_text_fmt(ui_LabelConfigTapDuration,"%d",config_tap_duration);
 
-  Serial.println("After wifi manager configuration");
-  delay(1000);
+  // set wifi configuration and device id
+  lv_textarea_set_text(ui_TextAreaConfigSSID,config_wifi_ssid.c_str());
+  lv_textarea_set_text(ui_TextAreaWifiPassword,config_wifi_pwd.c_str());
+  lv_textarea_set_text(ui_TextAreaConfigHost,config_cfgserver.c_str());
+  lv_textarea_set_text(ui_TextAreaConfigDeviceID,config_deviceid.c_str());
+  lv_label_set_text(ui_LabelPINValue,"");
 
+  // initialize the QR code
+  lv_color_t bg_color = lv_color_hex(0xFFFFFF);
+  lv_color_t fg_color = lv_color_hex(0x000000);
+  ui_QrcodeLnurl = lv_qrcode_create(ui_ScreenMain,240,fg_color,bg_color);
+  lv_obj_center(ui_QrcodeLnurl);
+  lv_obj_set_pos(ui_QrcodeLnurl,-3, -3);
+  lv_obj_set_style_border_width(ui_QrcodeLnurl, 0, 0);
+  lv_obj_add_flag(ui_QrcodeLnurl, LV_OBJ_FLAG_HIDDEN);
 
-  // Start config portal if button pressed during boot
-  if ( bResetWifi ) {
-    Serial.println("Going to reset wifi");
-    delay(1000);
-    wifiManager.startConfigPortal(WIFI_SSID);
-  } else {
-    Serial.println("Line 404: Autoconnect");
-    //wifiManager.autoConnect(WIFI_SSID);
-    Serial.println(  WiFi.SSID());
-    Serial.println(  WiFi.psk());
-    delay(2000);
-    WiFi.begin(WiFi.SSID(),WiFi.psk());
-    Serial.println("bla");
-    //wifiManager.autoConnect();
-    delay(1000);
-  }
+  // connect to servo
+  servo.attach(BIER_SERVO_PIN);
+  webSocket.onEvent(webSocketEvent);
 
-  Serial.println("After wifi manager");
-  delay(1000);
-  if ( shouldSaveConfig ) {
-    Serial.println("Should save config");
-    delay(1000);
+  // Force WiFi to reconnect
+  bWiFiReconnect = true;
 
-    // get values from config
-//    strcpy(config_websocket_url,wm_wsurl.getValue());
-//    strcpy(config_max_tap,wm_max_tap.getValue());
-//    strcpy(config_max_wait,wm_max_wait.getValue());
-//    strcpy(config_servo_open,wm_servo_open.getValue());
-//    strcpy(config_servo_closed,wm_servo_closed.getValue());
-    
-
-    // create json document and set variables
-    DynamicJsonDocument config(3000);
-		config[JSON_WSURL] = config_websocket_url;
-    config[JSON_MAX_WAIT] = config_max_wait;
-    config[JSON_MAX_TAP] = config_max_tap;
-    config[JSON_SERVO_OPEN] = config_servo_open;
-    config[JSON_SERVO_CLOSED] = config_servo_closed;
-    
-	  File file = LittleFS.open("/config.json", "w");
-    if ( file ) {
-      serializeJson(config, file);
-      file.close();
-    }
-
-    // restart ESP
-    ESP.restart();
-  }
-
-  // attaching servo  
-  Serial.println("Attaching servo");
-  delay(1000);
-
-  beerServo.write(servo_closed); // close servo valve
-  beerServo.attach(SERVO_PIN);
-  delay(1000);
-  beerServo.write(servo_closed); // close servo valve
-
-  
-  // Start websockets client
-  delay(1000);
-  Serial.println("Initializing WebSocket client");
-  webSocket.beginSSL(websocket_host.c_str(), 443, websocket_path.c_str());
-  webSocket.onEvent(webSocketEventHandler);
-  webSocket.setReconnectInterval(5000);
-
-  // web server config
-  server.on("/status",HTTP_GET,handleWebserverStatus);
-  server.serveStatic("/",LittleFS,"/");
-  server.begin();
-
-  delay(1000);
-
-  // turn of ledd
-  digitalWrite(LED_PIN, HIGH);  // turn off the LED
+  // set label in the About screen
+  setUIStatus(false,false,false);
 }
 
 void loop()
 {
-  // keep webserver running
-  server.handleClient();
 
-  // keep websocket connection running
-  webSocket.loop();
+  // reconnect to Wi-Fi 
+  if ( bWiFiReconnect ) {
+    bWiFiReconnect = false;
+    WiFi.disconnect();
+    WiFi.begin(config_wifi_ssid.c_str(),config_wifi_pwd.c_str());
+    setUIStatus(false,false, false);
 
-  // handle the Led (and blinking)
-  if ( beerState == BEER_STATE_AVAILABLE ) {  
-    flashLed(); 
+    bLoadDeviceSettings = true;
   }
 
+  if ( bLoadDeviceSettings && WiFi.status() == WL_CONNECTED ) {
+    bLoadDeviceSettings = false;
+    setUIStatus(true,false, false);
+    getLNURLSettings(config_deviceid);
+    bWebSocketReconnect = true;
+  }
 
+  if ( bWebSocketReconnect && WiFi.status() == WL_CONNECTED && config_wshost.length() > 0 ) {
+    bWebSocketReconnect = false;
+    setUIStatus(true, true, false);
+    webSocket.beginSSL(config_wshost, 443, config_wspath);
+  }
+
+  lv_timer_handler();  
+  webSocket.loop();
 }
