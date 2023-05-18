@@ -190,6 +190,7 @@ void ButtonConfigConnectClicked(lv_event_t * e);
 void ButtonOKPINClicked(lv_event_t * e);
 void ButtoCancelPINClicked(lv_event_t * e);
 void ButtonConfigCleanClicked(lv_event_t * e);
+void ButtonConfigTunerClicked(lv_event_t * e);
 void ButtonConfigCloseClicked(lv_event_t * e);
 void ButtonConfigOpenClicked(lv_event_t * e);
 void ButtonConfigSaveClicked(lv_event_t * e);
@@ -198,6 +199,7 @@ void ButtonBierStartClicked(lv_event_t * e);
 void ButtonAboutOneClicked(lv_event_t * e);
 void ButtonAboutTwoClicked(lv_event_t * e);
 void ButtonAboutThreeClicked(lv_event_t * e);
+
 
 #if BB_ABOUT == 1 
     LV_IMG_DECLARE(ui_img_1898_logo256_png);

@@ -34,6 +34,8 @@ void myDelay(uint32_t ms);
 
 void saveConfig();
 
+void beginOTA();
+
 #ifdef __cplusplus
 }
 #endif

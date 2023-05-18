@@ -104,6 +104,15 @@ void ButtonPinOKClicked(lv_event_t * e)
 	}
 }
 
+void ButtonConfigTunerClicked(lv_event_t * e)
+{
+	lv_disp_load_scr(ui_ScreenConfigAdvanced);
+	if ( false ) {
+		beginOTA();
+		/// UNREACHABLE CODE
+	}
+}
+
 void ButtonConfigConnectClicked(lv_event_t * e)
 {
 	// Your code here
