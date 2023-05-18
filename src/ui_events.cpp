@@ -79,7 +79,7 @@ void ButtonPinCancelClicked(lv_event_t * e)
 {
 	// Your code here
 	if ( entered_pin.length() == 0 ) {
-		lv_disp_load_scr(ui_ScreenMain);		
+		lv_disp_load_scr(ui_ScreenAbout);		
 	}
 	entered_pin = "";
 	lv_label_set_text(ui_LabelPINValue,"ENTER PIN");
@@ -192,3 +192,22 @@ void ButtonScreenBierFlowingClicked(lv_event_t * e)
 }
 
 
+void ButtonBierStartClicked(lv_event_t *e ) 
+{
+	beerStart();
+}
+
+void ButtonAboutOneClicked(lv_event_t *e) 
+{
+	wantBierClicked(0);
+}
+
+void ButtonAboutTwoClicked(lv_event_t *e) 
+{
+	wantBierClicked(1);
+}
+
+void ButtonAboutThreeClicked(lv_event_t *e) 
+{
+	wantBierClicked(2);
+}

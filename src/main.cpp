@@ -8,35 +8,36 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
-
+#include <HttpsOTAUpdate.h>
 
 // config variables
-int config_servo_back = 180;
-int config_servo_close = 180;
-int config_servo_open = 70;
+int config_servo_back = 0;
+int config_servo_close = 53;
+int config_servo_open = 111;
 String config_wifi_ssid = "";
 String config_wifi_pwd = "";
-String config_lnurldeviceid = "";
-String config_invoicekey = "";
-String config_adminkey = "";
-String config_wallet = "";
-String config_lnurl = "";
-int config_tap_duration = 8000;
+int config_tap_duration = 11000;
+int tap_duration = 0;
 String config_pin = String(CONFIG_PIN);
-String config_cfgserver = "www.meulenhoff.org";
+String config_lnbitshost = "lnbits.meulenhoff.org";
 String config_deviceid = "";
 
 // two booleans to pass instructions to the main loop
 bool bWiFiReconnect = true;
 bool bLoadDeviceSettings = false;
 bool bWebSocketReconnect = false;
-String config_wshost = "";
 String config_wspath = "";
+
+// the LNURLs for the switches
+#define BLIKSEMBIER_CFG_MAX_SWITCHES 3
+int config_numswitches = 0;
+String config_lnurl[BLIKSEMBIER_CFG_MAX_SWITCHES];
+String config_label[BLIKSEMBIER_CFG_MAX_SWITCHES];
+
 
 Servo servo;
 WebSocketsClient webSocket;
 lv_obj_t *ui_QrcodeLnurl = NULL; // the QR code object
-lv_obj_t *ui_QrcodeWallet = NULL; 
 
 // defines for the config file
 #define BLIKSEMBIER_CFG_SSID "ssid"
@@ -44,8 +45,7 @@ lv_obj_t *ui_QrcodeWallet = NULL;
 #define BLIKSEMBIER_CFG_SERVO_BACK "servoback"
 #define BLIKSEMBIER_CFG_SERVO_CLOSE "servoclose"
 #define BLIKSEMBIER_CFG_SERVO_OPEN "servoopen"
-#define BLIKSEMBIER_CFG_TAP_DURATION "tapduration"
-#define BLIKSEMBIER_CFG_CFGSERVER "cfgserver"
+#define BLIKSEMBIER_CFG_LNBITSHOST "lnbitshost"
 #define BLIKSEMBIER_CFG_DEVICEID "deviceid"
 #define BLIKSEMBIER_CFG_PIN "pin"
 
@@ -53,6 +53,7 @@ lv_obj_t *ui_QrcodeWallet = NULL;
 #define QRCODE_PIXEL_SIZE 3
 #define QRCODE_X_OFFSET 10
 #define QRCODE_Y_OFFSET 10
+
 
 void beerClose() {
   servo.write(config_servo_close);
@@ -66,11 +67,11 @@ void beerClean() {
   servo.write(config_servo_back);
 }
 
-void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,const char *configserver) {
+void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,const char *lnbitshost) {
   config_wifi_ssid = String(ssid);
   config_wifi_pwd = String(pwd);
   config_deviceid = String(deviceid);
-  config_cfgserver = String(configserver);
+  config_lnbitshost = String(lnbitshost);
   bWiFiReconnect = true;
   saveConfig();
 }
@@ -110,6 +111,11 @@ bool getWebSocketStatus() {
   return webSocket.isConnected();
 }
 
+void backToAbout(lv_timer_t * timer)
+{
+  lv_disp_load_scr(ui_ScreenAbout);	  
+}
+
 void beerTimerProgress(lv_timer_t * timer)
 {
   int progress = lv_bar_get_value(ui_BarBierProgress);
@@ -121,43 +127,47 @@ void beerTimerProgress(lv_timer_t * timer)
 
   if ( progress >=  100 ) {
     beerClose();
-    lv_disp_load_scr(ui_ScreenMain);	  
+
+    lv_timer_t *timer = lv_timer_create(backToAbout, 3000, NULL);
+    lv_obj_add_flag(ui_BarBierProgress,LV_OBJ_FLAG_HIDDEN);
+    lv_timer_set_repeat_count(timer,1);
+
   }
 } 
 
-void beer()
+void beerScreen()
 {
+  lv_obj_add_flag(ui_BarBierProgress,LV_OBJ_FLAG_HIDDEN);
+	lv_obj_clear_flag(ui_ButtonBierStart,LV_OBJ_FLAG_HIDDEN);
   lv_bar_set_value(ui_BarBierProgress,0,LV_ANIM_OFF);
 	lv_disp_load_scr(ui_ScreenBierFlowing);	
 	//lv_timer_t *timer = lv_timer_create(beerTimerFinished, config_tap_duration, NULL);
-  lv_timer_t *timer = lv_timer_create(beerTimerProgress, config_tap_duration / 10, NULL);
+}
+
+void beerStart()
+{
+  lv_timer_t *timer = lv_timer_create(beerTimerProgress, tap_duration / 10, NULL);
   lv_timer_set_repeat_count(timer,10);
+  lv_obj_add_flag(ui_ButtonBierStart,LV_OBJ_FLAG_HIDDEN);
+	lv_obj_clear_flag(ui_BarBierProgress,LV_OBJ_FLAG_HIDDEN);
 	beerOpen();    
 }
 
-void setUIStatus(bool bWiFiConnected,bool bConfigLoaded, bool bWebSocketConnected) {
+void setUIStatus(bool bWiFiConnected,bool bConfigLoaded, bool bWebSocketConnected,String message) {
   if ( bWebSocketConnected ) {
-    lv_label_set_text(ui_LabelAboutStatus,"WebSocket connected");
-    lv_label_set_text(ui_LabelMainWebSocketStatus,"WS OK");
-    lv_label_set_text(ui_LabelMainWiFiStatus,"Wi-Fi OK");
+    lv_label_set_text(ui_LabelAboutStatus,"Ready to serve");
     lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi connected\nConfiguration loaded\nWebSocket connected");
     lv_obj_clear_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
   } else if ( bConfigLoaded  ) {
-    lv_label_set_text(ui_LabelAboutStatus,"Configuration loaded");
-    lv_label_set_text(ui_LabelMainWebSocketStatus,"No WS");
-    lv_label_set_text(ui_LabelMainWiFiStatus,"Wi-Fi OK");
+    lv_label_set_text(ui_LabelAboutStatus,"Connecting WebSocket");
     lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi connected\nConfiguration loaded\nWebSocket not connected");
     lv_obj_add_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
   } else if ( bWiFiConnected ) {
-    lv_label_set_text(ui_LabelAboutStatus,"Wi-Fi Connected");
-    lv_label_set_text(ui_LabelMainWebSocketStatus,"No WS");
-    lv_label_set_text(ui_LabelMainWiFiStatus,"Wi-Fi OK");
+    lv_label_set_text(ui_LabelAboutStatus,"Loading configuration");
     lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi connected\nConfiguration not loaded\nWebSocket not connected");
     lv_obj_add_flag(ui_QrcodeLnurl, LV_OBJ_FLAG_HIDDEN);
   } else {
-    lv_label_set_text(ui_LabelAboutStatus,"Wi-Fi not connected");
-    lv_label_set_text(ui_LabelMainWebSocketStatus,"No WS");
-    lv_label_set_text(ui_LabelMainWiFiStatus,"No Wi-Fi");
+    lv_label_set_text(ui_LabelAboutStatus,"Connecting to Wi-Fi");
     lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi not connected\nConfiguration not loaded\nWebSocket not connected");
     lv_obj_add_flag(ui_QrcodeLnurl, LV_OBJ_FLAG_HIDDEN);
   }
@@ -167,21 +177,44 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_DISCONNECTED:
       if ( WiFi.status() == WL_CONNECTED ) {
-        setUIStatus(true,true,false);                  
+        setUIStatus(true,true,false,"WebSocket disconnected");                  
       } else {
-        setUIStatus(false,false,false);
+        setUIStatus(false,false,false,"Wi-Fi not available");
       }
       break;
     case WStype_CONNECTED:
       webSocket.sendTXT("Connected");
-      setUIStatus(true,true,true);
+      setUIStatus(true,true,true,"WebSocket connected");
       break;
     case WStype_TEXT:
-      beer();
+      {
+        String data = String((char *)payload);
+        int idx = data.indexOf('-');
+        if ( idx == -1 ) {
+          tap_duration = config_tap_duration;
+        } else {
+          tap_duration = data.substring(idx + 1).toInt();
+        }
+      }
+      beerScreen();
       break;
     default:
 			break;
   }
+}
+
+void wantBierClicked(int item) {
+  if ( config_numswitches == 0 ) {
+    lv_disp_load_scr(ui_ScreenPin);	
+    return;
+  }
+
+  //als we de pagina laden? 
+  lv_qrcode_update(ui_QrcodeLnurl, config_lnurl[item].c_str(), config_lnurl[item].length());
+  lv_disp_load_scr(ui_ScreenMain);	
+  lv_label_set_text(ui_LabelMainProduct,config_label[item].c_str());
+
+  // todo: zet nog een label op het screen erbij  
 }
 
 void myDelay(uint32_t ms) {
@@ -215,10 +248,8 @@ void loadConfig() {
           config_servo_open = String(value).toInt();
         } else if ( name == BLIKSEMBIER_CFG_SERVO_BACK ) {
           config_servo_back = String(value).toInt();
-        } else if ( name == BLIKSEMBIER_CFG_CFGSERVER ) {
-          config_cfgserver = String(value);     
-        } else if ( name == BLIKSEMBIER_CFG_TAP_DURATION ) {
-          config_tap_duration = String(value).toInt();
+        } else if ( name == BLIKSEMBIER_CFG_LNBITSHOST ) {
+          config_lnbitshost = String(value);     
         } else if (name == BLIKSEMBIER_CFG_PIN ) {
           config_pin = String(value);
         } else if ( name == BLIKSEMBIER_CFG_DEVICEID ) {
@@ -248,14 +279,12 @@ void saveConfig() {
   doc[3]["value"] = config_servo_close;
   doc[4]["name"] = BLIKSEMBIER_CFG_SERVO_OPEN;
   doc[4]["value"] = config_servo_open;
-  doc[5]["name"] = BLIKSEMBIER_CFG_TAP_DURATION;
-  doc[5]["value"] = config_tap_duration;
-  doc[6]["name"] = BLIKSEMBIER_CFG_CFGSERVER;
-  doc[6]["value"] = config_cfgserver;
-  doc[7]["name"] = BLIKSEMBIER_CFG_PIN;
-  doc[7]["value"] = config_pin;
-  doc[8]["name"] = BLIKSEMBIER_CFG_DEVICEID;
-  doc[8]["value"] = config_deviceid;
+  doc[5]["name"] = BLIKSEMBIER_CFG_LNBITSHOST;
+  doc[5]["value"] = config_lnbitshost;
+  doc[6]["name"] = BLIKSEMBIER_CFG_PIN;
+  doc[6]["value"] = config_pin;
+  doc[7]["name"] = BLIKSEMBIER_CFG_DEVICEID;
+  doc[7]["value"] = config_deviceid;
 
   String output = "";
   serializeJson(doc, output);
@@ -267,18 +296,17 @@ void getLNURLSettings(String deviceid)
 {  
   // clear path
   config_wspath = "";
-  config_wshost = "";
 
   String config_url = "https://";
-  config_url += config_cfgserver;
-  config_url += "/.well-known/bliksembier/";
+  config_url += config_lnbitshost;
+  config_url += "/lnurldevice/api/v1/lnurlpos/connect/";
   config_url += deviceid;
-  config_url += ".json";
 
   HTTPClient http;
   http.begin(config_url);
   int statusCode = http.GET();
   if ( statusCode != HTTP_CODE_OK ) {
+    setUIStatus(true,false,false,"Invalid response when loading config");
     return;
   }  
 
@@ -288,13 +316,62 @@ void getLNURLSettings(String deviceid)
 
   StaticJsonDocument<2000> doc;
   DeserializationError error = deserializeJson(doc, payload);
-  if ( error.code() ==  DeserializationError::Ok ) {
-    String id = doc["id"];
-    String host = doc["host"];
-    String lnurl = doc["lnurl"];
-    config_wshost = host;
-    config_wspath = "/api/v1/ws/" + id;
-    lv_qrcode_update(ui_QrcodeLnurl, lnurl.c_str(), lnurl.length());
+  if ( error.code() !=  DeserializationError::Ok ) {
+    return;
+  }
+
+  // clear current switches
+  config_numswitches = 0;
+  
+  // bewaar opties in een keuzelijstje
+  JsonArray switches = doc["switches"].as<JsonArray>();
+  config_numswitches = switches.size() < BLIKSEMBIER_CFG_MAX_SWITCHES ? switches.size() : BLIKSEMBIER_CFG_MAX_SWITCHES;
+  for (int i=0;i < config_numswitches;i++) {
+    JsonObject obj = switches[i];
+    config_lnurl[i] = obj["lnurl"].as<String>();
+    config_label[i] = obj["label"].as<String>();
+  }
+
+  config_wspath = "/api/v1/ws/" + config_deviceid;
+
+  switch ( config_numswitches ) {
+    case 0:
+      lv_obj_clear_flag(ui_ButtonAboutOne,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_add_flag(ui_ButtonAboutTwo,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_add_flag(ui_ButtonAboutThree,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_set_x(ui_ButtonAboutOne, 0);
+      lv_label_set_text(ui_LabelAboutOne, "CONFIG");
+      config_wspath = "";
+      break;
+    case 1:
+      lv_obj_clear_flag(ui_ButtonAboutOne,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_add_flag(ui_ButtonAboutTwo,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_add_flag(ui_ButtonAboutThree,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_set_x(ui_ButtonAboutOne, 0);
+      lv_label_set_text(ui_LabelAboutOne, config_label[0].c_str());
+      break;
+    case 2:
+      lv_obj_clear_flag(ui_ButtonAboutOne,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_clear_flag(ui_ButtonAboutTwo,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_add_flag(ui_ButtonAboutThree,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_set_x(ui_ButtonAboutOne, -60);
+      lv_obj_set_x(ui_ButtonAboutTwo, 60);
+      lv_label_set_text(ui_LabelAboutOne, config_label[0].c_str());
+      lv_label_set_text(ui_LabelAboutTwo, config_label[1].c_str());
+      break;
+    case 3:
+      lv_obj_clear_flag(ui_ButtonAboutOne,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_clear_flag(ui_ButtonAboutTwo,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_clear_flag(ui_ButtonAboutThree,LV_OBJ_FLAG_HIDDEN);
+      lv_obj_set_x(ui_ButtonAboutOne, -105);
+      lv_obj_set_x(ui_ButtonAboutTwo, 0);
+      lv_obj_set_x(ui_ButtonAboutThree, 105);
+      lv_label_set_text(ui_LabelAboutOne, config_label[0].c_str());
+      lv_label_set_text(ui_LabelAboutTwo, config_label[1].c_str());
+      lv_label_set_text(ui_LabelAboutThree, config_label[2].c_str());
+      break;
+    default:
+      break;
   }
 }
 
@@ -305,10 +382,7 @@ void setup()
   Serial.begin(115200);
   delay(2000);
 
-
-
   LittleFS.begin(true);
-
 
   smartdisplay_init();
   ui_init();
@@ -317,8 +391,7 @@ void setup()
   lv_color32_t rgb;
   rgb.full = lv_color_to32(c);
   smartdisplay_set_led_color(rgb);
-
-
+  smartdisplay_tft_set_backlight(BB_TFT_INTENSITY);
   // set UI components from config
   loadConfig();
 
@@ -337,7 +410,7 @@ void setup()
   // set wifi configuration and device id
   lv_textarea_set_text(ui_TextAreaConfigSSID,config_wifi_ssid.c_str());
   lv_textarea_set_text(ui_TextAreaWifiPassword,config_wifi_pwd.c_str());
-  lv_textarea_set_text(ui_TextAreaConfigHost,config_cfgserver.c_str());
+  lv_textarea_set_text(ui_TextAreaConfigHost,config_lnbitshost.c_str());
   lv_textarea_set_text(ui_TextAreaConfigDeviceID,config_deviceid.c_str());
   lv_label_set_text(ui_LabelPINValue,"");
 
@@ -346,7 +419,7 @@ void setup()
   lv_color_t fg_color = lv_color_hex(0x000000);
   ui_QrcodeLnurl = lv_qrcode_create(ui_ScreenMain,240,fg_color,bg_color);
   lv_obj_center(ui_QrcodeLnurl);
-  lv_obj_set_pos(ui_QrcodeLnurl,-3, -3);
+  lv_obj_set_pos(ui_QrcodeLnurl,-3, 7);
   lv_obj_set_style_border_width(ui_QrcodeLnurl, 0, 0);
   lv_obj_add_flag(ui_QrcodeLnurl, LV_OBJ_FLAG_HIDDEN);
 
@@ -358,7 +431,7 @@ void setup()
   bWiFiReconnect = true;
 
   // set label in the About screen
-  setUIStatus(false,false,false);
+  setUIStatus(false,false,false,"Initialized");
 }
 
 void loop()
@@ -369,22 +442,22 @@ void loop()
     bWiFiReconnect = false;
     WiFi.disconnect();
     WiFi.begin(config_wifi_ssid.c_str(),config_wifi_pwd.c_str());
-    setUIStatus(false,false, false);
+    setUIStatus(false,false, false,"Wi-Fi started");
 
     bLoadDeviceSettings = true;
   }
 
   if ( bLoadDeviceSettings && WiFi.status() == WL_CONNECTED ) {
     bLoadDeviceSettings = false;
-    setUIStatus(true,false, false);
+    setUIStatus(true,false, false,"Loading device settings");
     getLNURLSettings(config_deviceid);
     bWebSocketReconnect = true;
   }
 
-  if ( bWebSocketReconnect && WiFi.status() == WL_CONNECTED && config_wshost.length() > 0 ) {
+  if ( bWebSocketReconnect && WiFi.status() == WL_CONNECTED && config_wspath.length() > 0 ) {
     bWebSocketReconnect = false;
-    setUIStatus(true, true, false);
-    webSocket.beginSSL(config_wshost, 443, config_wspath);
+    setUIStatus(true, true, false,"Connecting WebSocket");
+    webSocket.beginSSL(config_lnbitshost, 443, config_wspath);
   }
 
   lv_timer_handler();  

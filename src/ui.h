@@ -17,11 +17,18 @@ extern lv_obj_t * ui_PanelHeaderAbout;
 extern lv_obj_t * ui_Label17;
 extern lv_obj_t * ui_Image1;
 extern lv_obj_t * ui_LabelAboutStatus;
-void ui_event_ButtonAboutContinue(lv_event_t * e);
-extern lv_obj_t * ui_ButtonAboutContinue;
-extern lv_obj_t * ui_LabelAboutButton;
+extern lv_obj_t * ui_ButtonAboutOne;
+extern lv_obj_t * ui_ButtonAboutTwo;
+extern lv_obj_t * ui_ButtonAboutThree;
+extern lv_obj_t * ui_LabelAboutOne;
+extern lv_obj_t * ui_LabelAboutTwo;
+extern lv_obj_t * ui_LabelAboutThree;
+void ui_event_ButtonAboutOne(lv_event_t * e);
+void ui_event_ButtonAboutTwo(lv_event_t * e);
+void ui_event_ButtonAboutThree(lv_event_t * e);
 extern lv_obj_t * ui_ScreenMain;
 extern lv_obj_t * ui_PanelHeaderMain;
+extern lv_obj_t * ui_LabelMainProduct;
 extern lv_obj_t * ui_Label1;
 void ui_event_ButtonMainConfig(lv_event_t * e);
 extern lv_obj_t * ui_ButtonMainConfig;
@@ -30,8 +37,6 @@ void ui_event_ButtonMainAbout(lv_event_t * e);
 extern lv_obj_t * ui_ButtonMainAbout;
 extern lv_obj_t * ui_Label18;
 extern lv_obj_t * ui_ImageQRCodeBorder;
-extern lv_obj_t * ui_LabelMainWiFiStatus;
-extern lv_obj_t * ui_LabelMainWebSocketStatus;
 extern lv_obj_t * ui_ScreenPin;
 extern lv_obj_t * ui_LabelPINValue;
 extern lv_obj_t * ui_Panel3;
@@ -164,6 +169,10 @@ extern lv_obj_t * ui_Panel4;
 extern lv_obj_t * ui_Label42;
 extern lv_obj_t * ui_Image3;
 extern lv_obj_t * ui_BarBierProgress;
+extern lv_obj_t * ui_ButtonBierStart;
+extern lv_obj_t * ui_Label45;
+void ui_event_ButtonBierStart(lv_event_t * e);
+
 
 void ButtonPinOneClicked(lv_event_t * e);
 void ButtonPinTwoClicked(lv_event_t * e);
@@ -185,8 +194,17 @@ void ButtonConfigCloseClicked(lv_event_t * e);
 void ButtonConfigOpenClicked(lv_event_t * e);
 void ButtonConfigSaveClicked(lv_event_t * e);
 void ButtonScreenBierFlowingClicked(lv_event_t * e);
+void ButtonBierStartClicked(lv_event_t * e);
+void ButtonAboutOneClicked(lv_event_t * e);
+void ButtonAboutTwoClicked(lv_event_t * e);
+void ButtonAboutThreeClicked(lv_event_t * e);
 
-LV_IMG_DECLARE(ui_img_kanhetal256_png);    // assets/kanhetal256.png
+#if BB_ABOUT == 1 
+    LV_IMG_DECLARE(ui_img_1898_logo256_png);
+#else
+    LV_IMG_DECLARE(ui_img_kanhetal256_png);    // assets/kanhetal256.png
+#endif
+
 LV_IMG_DECLARE(ui_img_329557545);    // assets/qr-code-slagschaduw-274x274-v2.png
 LV_IMG_DECLARE(ui_img_biertap256_png);    // assets/biertap256.png
 
