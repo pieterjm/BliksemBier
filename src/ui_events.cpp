@@ -220,3 +220,8 @@ void ButtonAboutThreeClicked(lv_event_t *e)
 {
 	wantBierClicked(2);
 }
+
+void ButtonFreeClicked(lv_event_t *e)
+{
+	freeBeerClicked();
+}

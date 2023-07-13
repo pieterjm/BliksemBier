@@ -107,6 +107,13 @@ void ui_event_ButtonConfigDone(lv_event_t * e);
 extern lv_obj_t * ui_ButtonConfigDone;
 void ui_event_Label24(lv_event_t * e);
 extern lv_obj_t * ui_Label24;
+void ui_event_ButtonConfigFree(lv_event_t * e);
+extern lv_obj_t * ui_ButtonConfigFree;
+void ui_event_Label27(lv_event_t * e);
+extern lv_obj_t * ui_Label27;
+
+
+
 extern lv_obj_t * ui_PanelConfigPIN;
 extern lv_obj_t * ui_Label38;
 extern lv_obj_t * ui_Label39;
@@ -199,7 +206,7 @@ void ButtonBierStartClicked(lv_event_t * e);
 void ButtonAboutOneClicked(lv_event_t * e);
 void ButtonAboutTwoClicked(lv_event_t * e);
 void ButtonAboutThreeClicked(lv_event_t * e);
-
+void ButtonFreeClicked(lv_event_t * e );
 
 #if BB_ABOUT == 1 
     LV_IMG_DECLARE(ui_img_1898_logo256_png);

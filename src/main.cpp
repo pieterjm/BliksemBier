@@ -186,6 +186,12 @@ void beerStart()
 	beerOpen();    
 }
 
+void freeBeerClicked()
+{
+  tap_duration = config_tap_duration;
+  beerScreen();
+}
+
 void setUIStatus(bool bWiFiConnected,bool bConfigLoaded, bool bWebSocketConnected,String message) {
   if ( bWebSocketConnected ) {
     lv_label_set_text(ui_LabelAboutStatus,"Ready to serve");
@@ -490,6 +496,7 @@ void setup()
 
   // connect to servo
   servo.attach(BIER_SERVO_PIN);
+  beerClose();
   webSocket.onEvent(webSocketEvent);
 
   // Force WiFi to reconnect

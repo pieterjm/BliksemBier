@@ -1,37 +1,108 @@
-<h1>Instellen BliksemBier</h1>
-
-<ol>
-<li>Zet spanning op BliksemBier en druk op de knop als de led brand: de led gaat uit.</li>
-<li>Verbind met het Wi-Fi netwerk 'BliksemBier'.</li>
-<li>Werk onderstaande gegevens bij en klik op 'Opslaan'.</li>
-</ol>
-
-<FORM METHOD="GET" action="http://192.168.4.1/wifisave">
-  <h4>Wi-Fi configuratie</h4>
-  
-  <p>Wi-Fi SSID: <input name="s" value=""></p>
-  <p>Wi-Fi wactwoord: <input name="p" value=""></p>
-  <h4>WebSocket URL</h4>
-  <input name="wsurl" size="100" value=""><br>
-  <p>
-    De WebSocket URL is de verbinding via welke de biertap bericht krijgt van een geslaagde betaling. De betaling wordt verwerkt door LNbits via een LNURLdevice. Om een WebSocket URL te krijgen, doorloop de volgende stappen:
-    <ol>
-      <li>Maak een wallet aan op de demo server van LNbits (https://legend.lnbits.com/).</li>
-      <li>Schakel de LNURLDevice extension on (Extensions onder het kopje Extensions in LNbits).</li>
-      <li>Kies onder LNURLDevice in LNbits, en maak een nieuw LNURLDevice aan.</li>
-      <li>Onder de LNURLDevice settings staat de WebSocket URL. Vul deze hierboven in.</li>
-    </ol>
-  </p>     
-  <input name="max_wait" value="20000"><br>
-  <input name="max_tap" value="7000"><br>
-  <h4>Servohoek, tap open</h4>
-  <p>Servohoek, tap open: <input name="servo_open" value="30">
-        De hoek (in graden) van de servo als de tap open is. Normale waarde is 30 graden.
-  </p>
-  <h4>Servohoek, tap dicht</h4>
-  <p>Servohoek, tap dicht: <input name="servo_closed" value="180">
-    De hoek (in graden) van de servo als de tap dicht is. Normale waarde is 180 graden
-  </p>
-  
-  <input type=submit name="Opslaan">
-</form
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>BliksemBier installer</title>
+    <meta
+      name="description"
+      content="Easily allow users to install BliksemBier firmware on the web."
+    />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="color-scheme" content="dark light" />
+    <style>
+      body {
+        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Ubuntu, sans-serif;
+        padding: 0;
+        margin: 0;
+        line-height: 1.4;
+      }
+      .content {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 12px;
+      }
+      h2 {
+        margin-top: 2em;
+      }
+      h3 {
+        margin-top: 1.5em;
+      }
+      a {
+        color: #03a9f4;
+      }
+      .invisible {
+        visibility: hidden;
+      }
+      .hidden {
+        display: none;
+      }
+      esp-web-install-button[install-unsupported] {
+        visibility: inherit;
+      }
+      .content pre {
+        max-width: 100%;
+        overflow-y: scroll;
+      }
+      .footer {
+        margin-top: 24px;
+        border-top: 1px solid #ccc;
+        padding-top: 24px;
+        text-align: center;
+      }
+      .footer .initiative {
+        font-style: italic;
+        margin-top: 16px;
+      }
+      table {
+        border-spacing: 0;
+      }
+      td {
+        padding: 8px;
+        border-bottom: 1px solid #ccc;
+      }
+      .radios li {
+        list-style: none;
+        line-height: 2em;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #333;
+          color: #fff;
+        }
+        a {
+          color: #58a6ff;
+        }
+      }
+    </style>
+    <script type="module" src="https://unpkg.com/esp-web-tools@8.0.1/dist/web/install-button.js?module"></script>
+  </head>
+  <body>
+    <div class="content">
+      <h1>BliksemBier installer</h1>
+      <p>Select your product</p>
+      <ul class="radios">
+        <li>
+          <label><input type="radio" name="type" value="bliksembier_v1_0" />BliksemBier v1.0</label>
+        </li>
+        <li>
+          <label><input type="radio" name="type" value="bliksembier_v2_0" />BliksemBier v2.0</label>
+        </li>
+      </ul>
+      <p class="button-row" align="center">
+        <esp-web-install-button class="invisible"></esp-web-install-button>
+      </p>
+      
+      <div class="footer">
+        Installer powered by <a href="https://esphome.github.io/esp-web-tools/">ESP Web Tools</a>.
+      </div>
+      <script>
+	document.querySelectorAll('input[name="type"]').forEach(radio =>
+            radio.addEventListener("change", () => {
+		const button = document.querySelector('esp-web-install-button');
+		button.manifest = `./manifest_${radio.value}.json`;
+		button.classList.remove('invisible');
+            }));
+    </script>
+  </body>
+</html>

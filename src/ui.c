@@ -102,6 +102,10 @@ void ui_event_ButtonConfigDone(lv_event_t * e);
 lv_obj_t * ui_ButtonConfigDone;
 void ui_event_Label24(lv_event_t * e);
 lv_obj_t * ui_Label24;
+void ui_event_ButtonConfigFree(lv_event_t * e);
+lv_obj_t * ui_ButtonConfigFree;
+void ui_event_Label27(lv_event_t * e);
+lv_obj_t * ui_Label27;
 lv_obj_t * ui_PanelConfigPIN;
 lv_obj_t * ui_Label38;
 lv_obj_t * ui_Label39;
@@ -398,6 +402,26 @@ void ui_event_Label24(lv_event_t * e)
         _ui_screen_change(ui_ScreenConfigAdvanced, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0);
     }
 }
+void ui_event_ButtonConfigFree(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+    lv_obj_t * target = lv_event_get_target(e);
+    if(event_code == LV_EVENT_CLICKED) {
+        ButtonFreeClicked(e);
+        _ui_flag_modify(ui_PanelConfigPIN, LV_OBJ_FLAG_HIDDEN, _UI_MODIFY_FLAG_ADD);
+        _ui_flag_modify(ui_KeyboardConfigWifi, LV_OBJ_FLAG_HIDDEN, _UI_MODIFY_FLAG_ADD);
+        _ui_flag_modify(ui_KeyboardNumeric, LV_OBJ_FLAG_HIDDEN, _UI_MODIFY_FLAG_ADD);
+    }
+}
+void ui_event_Label27(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+    lv_obj_t * target = lv_event_get_target(e);
+    if(event_code == LV_EVENT_CLICKED) {
+        _ui_screen_change(ui_ScreenConfigAdvanced, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0);
+    }
+}
+
 void ui_event_TextAreaConfigPINCurrent(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
@@ -1137,6 +1161,19 @@ void ui_ScreenConfig_screen_init(void)
     lv_obj_set_style_text_opa(ui_Label14, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_Label14, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    /*
+    // Drop Down for Wi=Fi network selection
+    ui_DropdownConfigSSID = lv_dropdown_create(ui_ScreenConfig);
+    lv_dropdown_set_options(ui_DropdownConfigSSID, "");
+    lv_dropdown_set_text(ui_DropdownConfigSSID, "Select Wi-Fi network");
+    lv_obj_set_width(ui_DropdownConfigSSID, 240);
+    lv_obj_set_height(ui_DropdownConfigSSID, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_DropdownConfigSSID, -10);
+    lv_obj_set_y(ui_DropdownConfigSSID, 60);
+    lv_obj_set_align(ui_DropdownConfigSSID, LV_ALIGN_TOP_RIGHT);
+    lv_obj_add_flag(ui_DropdownConfigSSID, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
+    */
+
     ui_TextAreaConfigSSID = lv_textarea_create(ui_ScreenConfig);
     lv_obj_set_width(ui_TextAreaConfigSSID, 240);
     lv_obj_set_height(ui_TextAreaConfigSSID, LV_SIZE_CONTENT);    /// 50
@@ -1257,6 +1294,28 @@ void ui_ScreenConfig_screen_init(void)
     lv_obj_set_style_text_color(ui_Label24, lv_color_hex(BB_FGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_Label24, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_Label24, &ui_font_FontBoucherieBlock24, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_ButtonConfigFree = lv_btn_create(ui_ScreenConfig);
+    lv_obj_set_width(ui_ButtonConfigFree, 100);
+    lv_obj_set_height(ui_ButtonConfigFree, 50);
+    lv_obj_set_x(ui_ButtonConfigFree, 10);
+    lv_obj_set_y(ui_ButtonConfigFree, -10);
+    lv_obj_set_align(ui_ButtonConfigFree, LV_ALIGN_BOTTOM_LEFT);
+    lv_obj_add_flag(ui_ButtonConfigFree, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
+    lv_obj_clear_flag(ui_ButtonConfigFree, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_set_style_bg_color(ui_ButtonConfigFree, lv_color_hex(BB_BGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_ButtonConfigFree, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_Label27 = lv_label_create(ui_ButtonConfigFree);
+    lv_obj_set_width(ui_Label27, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_Label27, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_align(ui_Label27, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_Label27, "FREE");
+    lv_obj_set_style_text_color(ui_Label27, lv_color_hex(BB_FGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui_Label27, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_Label27, &ui_font_FontBoucherieBlock24, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+
 
     ui_PanelConfigPIN = lv_obj_create(ui_ScreenConfig);
     lv_obj_set_width(ui_PanelConfigPIN, 256);
@@ -1400,6 +1459,7 @@ void ui_ScreenConfig_screen_init(void)
     lv_obj_add_event_cb(ui_ButtonPIN, ui_event_ButtonPIN, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_Label24, ui_event_Label24, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_ButtonConfigDone, ui_event_ButtonConfigDone, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_ButtonConfigFree, ui_event_ButtonConfigFree, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_TextAreaConfigPINCurrent, ui_event_TextAreaConfigPINCurrent, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_TextAreaConfigPINRepeat, ui_event_TextAreaConfigPINRepeat, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_TextAreaConfigPINNew, ui_event_TextAreaConfigPINNew, LV_EVENT_ALL, NULL);

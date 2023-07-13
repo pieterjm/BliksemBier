@@ -36,6 +36,8 @@ void saveConfig();
 
 void beginOTA();
 
+void freeBeerClicked();
+
 #ifdef __cplusplus
 }
 #endif
