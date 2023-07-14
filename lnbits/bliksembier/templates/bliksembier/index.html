@@ -499,7 +499,7 @@
           }
         }
         LNbits.api
-          .request('POST', '/bliksembier/api/v1/lnurlpos', wallet, updatedData)
+          .request('POST', '/bliksembier/api/v1/device', wallet, updatedData)
           .then(function (response) {
             self.lnurldeviceLinks.push(maplnurldevice(response.data))
             self.formDialoglnurldevice.show = false
@@ -514,7 +514,7 @@
         LNbits.api
           .request(
             'GET',
-            '/bliksembier/api/v1/lnurlpos',
+            '/bliksembier/api/v1/device',
             self.g.user.wallets[0].adminkey
           )
           .then(function (response) {
@@ -531,7 +531,7 @@
         LNbits.api
           .request(
             'GET',
-            '/bliksembier/api/v1/lnurlpos/' + lnurldevice_id,
+            '/bliksembier/api/v1/device/' + lnurldevice_id,
             self.g.user.wallets[0].adminkey
           )
           .then(function (response) {
@@ -551,7 +551,7 @@
             LNbits.api
               .request(
                 'DELETE',
-                '/bliksembier/api/v1/lnurlpos/' + lnurldeviceId,
+                '/bliksembier/api/v1/device/' + lnurldeviceId,
                 self.g.user.wallets[0].adminkey
               )
               .then(function (response) {
@@ -595,7 +595,7 @@
         LNbits.api
           .request(
             'PUT',
-            '/bliksembier/api/v1/lnurlpos/' + updatedData.id,
+            '/bliksembier/api/v1/device/' + updatedData.id,
             wallet,
             updatedData
           )

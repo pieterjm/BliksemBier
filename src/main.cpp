@@ -370,8 +370,9 @@ void getLNURLSettings(String deviceid)
 
   String config_url = "https://";
   config_url += config_lnbitshost;
-  config_url += "/lnurldevice/api/v1/lnurlpos/connect/";
+  config_url += "/bliksembier/api/v1/drive/";
   config_url += deviceid;
+  config_url += "/switches";
 
   HTTPClient http;
   http.begin(config_url);

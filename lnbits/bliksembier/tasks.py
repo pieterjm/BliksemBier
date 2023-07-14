@@ -8,6 +8,7 @@ from lnbits.tasks import register_invoice_listener
 from .crud import get_payment, update_payment
 
 from loguru import logger
+import json
 
 async def wait_for_paid_invoices():
     invoice_queue = asyncio.Queue()
@@ -35,5 +36,9 @@ async def on_invoice_paid(payment: Payment) -> None:
         
     return await websocketUpdater(
         device_payment.deviceid,
-        "21-" + str(device_payment.payload),
+        json.dumps({
+            'event': "paid",
+            'paymentid': payment.extra["id"],
+            'payload': device_payment.payload
+        })
     )

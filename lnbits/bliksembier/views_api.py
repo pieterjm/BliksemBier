@@ -28,21 +28,21 @@ async def api_list_currencies_available():
     return list(currencies.keys())
 
 
-@bliksembier_ext.post("/api/v1/lnurlpos", dependencies=[Depends(require_admin_key)])
+@bliksembier_ext.post("/api/v1/device", dependencies=[Depends(require_admin_key)])
 async def api_lnurldevice_create(data: CreateLnurldevice, req: Request):
     print("create device")
     return await create_device(data, req)
 
 
 @bliksembier_ext.put(
-    "/api/v1/lnurlpos/{lnurldevice_id}", dependencies=[Depends(require_admin_key)]
+    "/api/v1/device/{lnurldevice_id}", dependencies=[Depends(require_admin_key)]
 )
 async def api_lnurldevice_update(
     data: CreateLnurldevice, lnurldevice_id: str, req: Request
 ):
     return await update_device(lnurldevice_id, data, req)
 
-@bliksembier_ext.get("/api/v1/lnurlpos")
+@bliksembier_ext.get("/api/v1/device")
 async def api_lnurldevices_retrieve(
     req: Request, wallet: WalletTypeInfo = Depends(get_key_type)
 ):
@@ -52,7 +52,7 @@ async def api_lnurldevices_retrieve(
 
 
 @bliksembier_ext.get(
-    "/api/v1/lnurlpos/{lnurldevice_id}", dependencies=[Depends(get_key_type)]
+    "/api/v1/device/{lnurldevice_id}", dependencies=[Depends(get_key_type)]
 )
 async def api_lnurldevice_retrieve(req: Request, lnurldevice_id: str):
     lnurldevice = await get_device(lnurldevice_id, req)
@@ -63,9 +63,9 @@ async def api_lnurldevice_retrieve(req: Request, lnurldevice_id: str):
     return lnurldevice
 
 @bliksembier_ext.get(
-    "/api/v1/lnurlpos/connect/{lnurldevice_id}"
+    "/api/v1/device/{lnurldevice_id}/switches"
 )
-async def api_lnurldevice_connect(req: Request, lnurldevice_id: str):
+async def api_lnurldevice_switches(req: Request, lnurldevice_id: str):
     lnurldevice = await get_device(lnurldevice_id, req)
     if not lnurldevice:
         raise HTTPException(
@@ -79,7 +79,7 @@ async def api_lnurldevice_connect(req: Request, lnurldevice_id: str):
     return connectdevice
 
 @bliksembier_ext.delete(
-    "/api/v1/lnurlpos/{lnurldevice_id}", dependencies=[Depends(require_admin_key)]
+    "/api/v1/device/{lnurldevice_id}", dependencies=[Depends(require_admin_key)]
 )
 async def api_lnurldevice_delete(req: Request, lnurldevice_id: str):
     lnurldevice = await get_device(lnurldevice_id, req)
