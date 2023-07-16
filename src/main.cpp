@@ -101,10 +101,12 @@ void beerClean() {
 }
 
 void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,const char *lnbitshost) {
+  
   config_wifi_ssid = String(ssid);
   config_wifi_pwd = String(pwd);
   config_deviceid = String(deviceid);
   config_lnbitshost = String(lnbitshost);
+
   bWiFiReconnect = true;
   saveConfig();
 }
@@ -370,7 +372,7 @@ void getLNURLSettings(String deviceid)
 
   String config_url = "https://";
   config_url += config_lnbitshost;
-  config_url += "/bliksembier/api/v1/drive/";
+  config_url += "/bliksembier/api/v1/device/";
   config_url += deviceid;
   config_url += "/switches";
 
