@@ -1,0 +1,6 @@
+{
+    "name": "BliksemBier",
+    "short_description": "For Lightning enabled Beertaps",    
+    "tile": "/bliksembier/static/image/bliksembier.png",
+    "contributors": ["pieterjm"]
+}
