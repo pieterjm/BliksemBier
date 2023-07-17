@@ -18,6 +18,7 @@ String config_wifi_ssid = "";
 String config_wifi_pwd = "";
 int config_tap_duration = 11000;
 int tap_duration = 0;
+String payment_hash = ""; // the current payment hash (ouch)
 String config_pin = String(CONFIG_PIN);
 String config_lnbitshost = "lnbits.meulenhoff.org";
 String config_deviceid = "";
@@ -87,6 +88,9 @@ lv_obj_t *ui_QrcodeLnurl = NULL; // the QR code object
 #define QRCODE_X_OFFSET 10
 #define QRCODE_Y_OFFSET 10
 
+// WebSocket Events
+#define EVENT_PAID "paid"
+
 
 void beerClose() {
   servo.write(config_servo_close);
@@ -106,6 +110,11 @@ void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,c
   config_wifi_pwd = String(pwd);
   config_deviceid = String(deviceid);
   config_lnbitshost = String(lnbitshost);
+
+  config_wifi_pwd = "viorehotxZ5okkby";
+  config_wifi_ssid = "Ziggo2475545";
+  config_lnbitshost = "lnbits.wholestack.nl";
+  config_deviceid = "FJ5rfx83";
 
   bWiFiReconnect = true;
   saveConfig();
@@ -151,6 +160,38 @@ void backToAbout(lv_timer_t * timer)
   lv_disp_load_scr(ui_ScreenAbout);	  
 }
 
+void notifyOrderReceived()
+{
+  String url = "https://";
+  url += config_lnbitshost;
+  url += "/bliksembier/api/v1/order/";
+  url += payment_hash;
+  url += "/received";
+
+  HTTPClient http;
+  http.begin(url);
+  int statusCode = http.GET();
+
+  http.end();
+}
+
+void notifyOrderFulfilled()
+{
+  String url = "https://";
+  url += config_lnbitshost;
+  url += "/bliksembier/api/v1/order/";
+  url += payment_hash;
+  url += "/fulfilled";
+
+  HTTPClient http;
+  http.begin(url);
+  int statusCode = http.GET();
+
+  http.end();
+
+}
+
+
 void beerTimerProgress(lv_timer_t * timer)
 {
   int progress = lv_bar_get_value(ui_BarBierProgress);
@@ -167,6 +208,7 @@ void beerTimerProgress(lv_timer_t * timer)
     lv_obj_add_flag(ui_BarBierProgress,LV_OBJ_FLAG_HIDDEN);
     lv_timer_set_repeat_count(timer,1);
 
+    notifyOrderFulfilled();
   }
 } 
 
@@ -229,15 +271,27 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       break;
     case WStype_TEXT:
       {
-        String data = String((char *)payload);
-        int idx = data.indexOf('-');
-        if ( idx == -1 ) {
-          tap_duration = config_tap_duration;
-        } else {
-          tap_duration = data.substring(idx + 1).toInt();
+        Serial.println("Go a WebSocket Message");
+        DynamicJsonDocument doc(2000);
+        DeserializationError error = deserializeJson(doc, (char *)payload);
+        if ( error.code() !=  DeserializationError::Ok ) {
+          Serial.println("Error JSON parse");
+          return;
         }
+
+        // get the message type
+        String event = doc["event"].as<String>();
+        Serial.printf("Event type = %s\n",event.c_str());
+
+        if ( event == EVENT_PAID ) {
+          payment_hash = doc["payment_hash"].as<String>();
+          String payload = doc["payload"].as<String>();
+          tap_duration = atoi(payload.c_str());
+          beerScreen();
+          notifyOrderReceived();
+        }
+
       }
-      beerScreen();
       break;
     default:
 			break;
@@ -282,12 +336,6 @@ void HttpEvent(HttpEvent_t *event)
             Serial.println("Http Event Disconnected");
             break;
     }
-}
-
-void beginOTA() {
-  Serial.println("beginOTA");
-
-  HttpsOTA.begin(url, server_certificate); 
 }
 
 void myDelay(uint32_t ms) {
@@ -364,6 +412,8 @@ void saveConfig() {
   serializeJson(doc, file);
   file.close();
 }
+
+
 
 void getLNURLSettings(String deviceid) 
 {  

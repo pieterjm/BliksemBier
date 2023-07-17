@@ -3,7 +3,7 @@ from http import HTTPStatus
 from fastapi import Depends, HTTPException, Query, Request
 from loguru import logger
 
-from lnbits.core.crud import get_user
+from lnbits.core.crud import get_user, update_payment_extra
 from lnbits.decorators import (
     WalletTypeInfo,
     check_admin,
@@ -19,8 +19,10 @@ from .crud import (
     get_device,
     get_devices,
     update_device,
+    get_payment
 )
 from .models import CreateLnurldevice
+
 
 
 @bliksembier_ext.get("/api/v1/currencies")
@@ -77,6 +79,23 @@ async def api_lnurldevice_switches(req: Request, lnurldevice_id: str):
     }
 
     return connectdevice
+
+@bliksembier_ext.get(
+    "/api/v1/order/{payment_hash}/received"
+)
+async def api_payment_received(req: Request, payment_hash: str):
+    logger.info("Payment received");
+    await update_payment_extra(payment_hash=payment_hash, extra = { 'received':True})
+    return 1;
+
+@bliksembier_ext.get(
+    "/api/v1/order/{payment_hash}/fulfilled"
+)
+async def api_payment_fulfilled(req: Request, payment_hash: str):
+    logger.info("Payment fulfilled");
+    await update_payment_extra(payment_hash=payment_hash, extra = { 'fulfilled':True})
+    return 1;
+
 
 @bliksembier_ext.delete(
     "/api/v1/device/{lnurldevice_id}", dependencies=[Depends(require_admin_key)]

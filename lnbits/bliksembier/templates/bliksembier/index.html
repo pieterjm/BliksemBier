@@ -133,8 +133,11 @@
       <q-separator></q-separator>
       <q-card-section>
         <p>
-	  <img src="/bliksembier/static/image/bliksembier512.png">
+	  <img src="/bliksembier/static/image/bliksembier512.png" with="80%">
         </p>
+	<p>
+	  <esp-web-install-button manifest="/bliksembier/static/firmware/manifest.json" ></esp-web-install-button>
+	</p>
       </q-card-section>
     </q-card>
   </div>
@@ -340,6 +343,7 @@
 </div>
 {% endblock %} {% block scripts %} {{ window_vars(user) }}
 
+<script type="module" src="https://unpkg.com/esp-web-tools@8.0.1/dist/web/install-button.js?module"></script>
 <script>
   Vue.component(VueQrcode.name, VueQrcode)
 

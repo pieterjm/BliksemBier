@@ -1,0 +1,15 @@
+{
+  "name": "BliksemBier v0_1",
+  "version": "0.1",
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "/bliksembier/static/firmware/bootloader.bin", "offset": 4096 },
+        { "path": "/bliksembier/static/firmware/partitions.bin", "offset": 32768 },
+        { "path": "/bliksembier/static/firmware/boot_app0.bin", "offset": 57344 },
+        { "path": "/bliksembier/static/firmware/firmware.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}

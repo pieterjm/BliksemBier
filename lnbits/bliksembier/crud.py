@@ -183,3 +183,4 @@ async def get_lnurlpayload(
         (lnurldevicepayment_payload,),
     )
     return LnurldevicePayment(**row) if row else None
+

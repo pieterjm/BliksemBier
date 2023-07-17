@@ -38,7 +38,7 @@ async def on_invoice_paid(payment: Payment) -> None:
         device_payment.deviceid,
         json.dumps({
             'event': "paid",
-            'paymentid': payment.extra["id"],
+            'payment_hash': payment.payment_hash,
             'payload': device_payment.payload
         })
     )

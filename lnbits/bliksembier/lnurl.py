@@ -144,6 +144,8 @@ async def lnurl_callback(
             "amount": switch.amount,
             "currency": device.currency,
             "id": paymentid,
+            "received": False,
+            "fulfilled": False
         },
     )
 
