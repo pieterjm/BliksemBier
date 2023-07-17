@@ -111,11 +111,6 @@ void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,c
   config_deviceid = String(deviceid);
   config_lnbitshost = String(lnbitshost);
 
-  config_wifi_pwd = "viorehotxZ5okkby";
-  config_wifi_ssid = "Ziggo2475545";
-  config_lnbitshost = "lnbits.wholestack.nl";
-  config_deviceid = "FJ5rfx83";
-
   bWiFiReconnect = true;
   saveConfig();
 }
