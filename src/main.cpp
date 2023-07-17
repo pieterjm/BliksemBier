@@ -20,7 +20,7 @@ int config_tap_duration = 11000;
 int tap_duration = 0;
 String payment_hash = ""; // the current payment hash (ouch)
 String config_pin = String(CONFIG_PIN);
-String config_lnbitshost = "lnbits.meulenhoff.org";
+String config_lnbitshost = "";
 String config_deviceid = "";
 
 // two booleans to pass instructions to the main loop
@@ -183,7 +183,6 @@ void notifyOrderFulfilled()
   int statusCode = http.GET();
 
   http.end();
-
 }
 
 
