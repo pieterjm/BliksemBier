@@ -152,6 +152,8 @@ bool getWebSocketStatus() {
 
 void backToAbout(lv_timer_t * timer)
 {
+  notifyOrderFulfilled();
+
   lv_disp_load_scr(ui_ScreenAbout);	  
 }
 
@@ -204,7 +206,6 @@ void beerTimerProgress(lv_timer_t * timer)
     lv_obj_add_flag(ui_BarBierProgress,LV_OBJ_FLAG_HIDDEN);
     lv_timer_set_repeat_count(timer,1);
 
-    notifyOrderFulfilled();
   }
 } 
 

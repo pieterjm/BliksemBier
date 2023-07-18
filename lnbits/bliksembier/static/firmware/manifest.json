@@ -1,6 +1,7 @@
 {
-  "name": "BliksemBier v0_1",
-  "version": "0.1",
+  "name": "BliksemBier",
+  "version": "2023.07.18",
+  "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32",
