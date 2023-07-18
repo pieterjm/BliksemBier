@@ -157,6 +157,7 @@ void backToAbout(lv_timer_t * timer)
 
 void notifyOrderReceived()
 {
+  Serial.println("Order received");
   String url = "https://";
   url += config_lnbitshost;
   url += "/bliksembier/api/v1/order/";
@@ -172,6 +173,7 @@ void notifyOrderReceived()
 
 void notifyOrderFulfilled()
 {
+  Serial.println("Order fulfilled");
   String url = "https://";
   url += config_lnbitshost;
   url += "/bliksembier/api/v1/order/";
@@ -232,7 +234,7 @@ void freeBeerClicked()
 
 void setUIStatus(bool bWiFiConnected,bool bConfigLoaded, bool bWebSocketConnected,String message) {
   if ( bWebSocketConnected ) {
-    lv_label_set_text(ui_LabelAboutStatus,"Ready to serve");
+    lv_label_set_text(ui_LabelAboutStatus,"Ready to serve!");
     lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi connected\nConfiguration loaded\nWebSocket connected");
     lv_obj_clear_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
   } else if ( bConfigLoaded  ) {
