@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <ArduinoOTA.h>
 #include <esp32_smartdisplay.h>
 #include "bliksembier.h"
 #include "ui.h"
@@ -8,7 +7,6 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
-#include <HttpsOTAUpdate.h>
 
 // config variables
 int config_servo_back = 0;
@@ -24,9 +22,6 @@ String config_lnbitshost = "";
 String config_deviceid = "";
 
 // two booleans to pass instructions to the main loop
-bool bWiFiReconnect = true;
-bool bLoadDeviceSettings = false;
-bool bWebSocketReconnect = false;
 String config_wspath = "";
 
 // the LNURLs for the switches
@@ -35,38 +30,6 @@ int config_numswitches = 0;
 String config_lnurl[BLIKSEMBIER_CFG_MAX_SWITCHES];
 String config_label[BLIKSEMBIER_CFG_MAX_SWITCHES];
 
-// OTA update
-static HttpsOTAStatus_t otastatus;
-
-static const char *url = "https://www.meulenhoff.org/firmware.bin"; //state url of your firmware image
-
-static const char *server_certificate = "-----BEGIN CERTIFICATE-----\n" \
-     "MIIEkjCCA3qgAwIBAgIQCgFBQgAAAVOFc2oLheynCDANBgkqhkiG9w0BAQsFADA/\n" \
-     "MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT\n" \
-     "DkRTVCBSb290IENBIFgzMB4XDTE2MDMxNzE2NDA0NloXDTIxMDMxNzE2NDA0Nlow\n" \
-     "SjELMAkGA1UEBhMCVVMxFjAUBgNVBAoTDUxldCdzIEVuY3J5cHQxIzAhBgNVBAMT\n" \
-     "GkxldCdzIEVuY3J5cHQgQXV0aG9yaXR5IFgzMIIBIjANBgkqhkiG9w0BAQEFAAOC\n" \
-     "AQ8AMIIBCgKCAQEAnNMM8FrlLke3cl03g7NoYzDq1zUmGSXhvb418XCSL7e4S0EF\n" \
-     "q6meNQhY7LEqxGiHC6PjdeTm86dicbp5gWAf15Gan/PQeGdxyGkOlZHP/uaZ6WA8\n" \
-     "SMx+yk13EiSdRxta67nsHjcAHJyse6cF6s5K671B5TaYucv9bTyWaN8jKkKQDIZ0\n" \
-     "Z8h/pZq4UmEUEz9l6YKHy9v6Dlb2honzhT+Xhq+w3Brvaw2VFn3EK6BlspkENnWA\n" \
-     "a6xK8xuQSXgvopZPKiAlKQTGdMDQMc2PMTiVFrqoM7hD8bEfwzB/onkxEz0tNvjj\n" \
-     "/PIzark5McWvxI0NHWQWM6r6hCm21AvA2H3DkwIDAQABo4IBfTCCAXkwEgYDVR0T\n" \
-     "AQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwfwYIKwYBBQUHAQEEczBxMDIG\n" \
-     "CCsGAQUFBzABhiZodHRwOi8vaXNyZy50cnVzdGlkLm9jc3AuaWRlbnRydXN0LmNv\n" \
-     "bTA7BggrBgEFBQcwAoYvaHR0cDovL2FwcHMuaWRlbnRydXN0LmNvbS9yb290cy9k\n" \
-     "c3Ryb290Y2F4My5wN2MwHwYDVR0jBBgwFoAUxKexpHsscfrb4UuQdf/EFWCFiRAw\n" \
-     "VAYDVR0gBE0wSzAIBgZngQwBAgEwPwYLKwYBBAGC3xMBAQEwMDAuBggrBgEFBQcC\n" \
-     "ARYiaHR0cDovL2Nwcy5yb290LXgxLmxldHNlbmNyeXB0Lm9yZzA8BgNVHR8ENTAz\n" \
-     "MDGgL6AthitodHRwOi8vY3JsLmlkZW50cnVzdC5jb20vRFNUUk9PVENBWDNDUkwu\n" \
-     "Y3JsMB0GA1UdDgQWBBSoSmpjBH3duubRObemRWXv86jsoTANBgkqhkiG9w0BAQsF\n" \
-     "AAOCAQEA3TPXEfNjWDjdGBX7CVW+dla5cEilaUcne8IkCJLxWh9KEik3JHRRHGJo\n" \
-     "uM2VcGfl96S8TihRzZvoroed6ti6WqEBmtzw3Wodatg+VyOeph4EYpr/1wXKtx8/\n" \
-     "wApIvJSwtmVi4MFU5aMqrSDE6ea73Mj2tcMyo5jMd6jmeWUHK8so/joWUoHOUgwu\n" \
-     "X4Po1QYz+3dszkDqMp4fklxBwXRsW10KXzPMTZ+sOPAveyxindmjkW8lGy+QsRlG\n" \
-     "PfZ+G6Z6h7mjem0Y+iWlkYcV4PIWL1iwBi8saCbGS5jN2p8M+X+Q7UNKEkROb3N6\n" \
-     "KOqkqm57TH2H3eDJAkSnh6/DNFu0Qg==\n" \
-     "-----END CERTIFICATE-----";
 
 
 Servo servo;
@@ -91,6 +54,21 @@ lv_obj_t *ui_QrcodeLnurl = NULL; // the QR code object
 // WebSocket Events
 #define EVENT_PAID "paid"
 
+// state
+enum DeviceState {
+  OFFLINE = 1,
+  CONNECTING = 2,
+  CONNECTED = 3, 
+  CONFIGURED = 4, 
+  READY_TO_SERVE = 5,
+  ERROR_UNKNOWN_DEVICEID = 6,
+  ERROR_CONFIG_HTTP = 7,
+  ERROR_CONFIG_JSON = 8,
+  CONNECTING_WEBSOCKET = 9,
+  WAITING_FOR_RECONNECT = 10
+};
+
+DeviceState deviceState = OFFLINE;
 
 void beerClose() {
   servo.write(config_servo_close);
@@ -111,8 +89,9 @@ void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,c
   config_deviceid = String(deviceid);
   config_lnbitshost = String(lnbitshost);
 
-  bWiFiReconnect = true;
   saveConfig();
+
+  deviceState = OFFLINE;
 }
 
 void saveTuning(int32_t servoBack, int32_t servoClosed, int32_t servoOpen, int32_t tapDuration) {
@@ -150,12 +129,6 @@ bool getWebSocketStatus() {
   return webSocket.isConnected();
 }
 
-void backToAbout(lv_timer_t * timer)
-{
-  notifyOrderFulfilled();
-
-  lv_disp_load_scr(ui_ScreenAbout);	  
-}
 
 void notifyOrderReceived()
 {
@@ -187,6 +160,13 @@ void notifyOrderFulfilled()
   int statusCode = http.GET();
 
   http.end();
+}
+
+void backToAbout(lv_timer_t * timer)
+{
+  notifyOrderFulfilled();
+
+  lv_disp_load_scr(ui_ScreenAbout);	  
 }
 
 
@@ -233,38 +213,45 @@ void freeBeerClicked()
   beerScreen();
 }
 
-void setUIStatus(bool bWiFiConnected,bool bConfigLoaded, bool bWebSocketConnected,String message) {
-  if ( bWebSocketConnected ) {
-    lv_label_set_text(ui_LabelAboutStatus,"Ready to serve!");
-    lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi connected\nConfiguration loaded\nWebSocket connected");
-    lv_obj_clear_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
-  } else if ( bConfigLoaded  ) {
-    lv_label_set_text(ui_LabelAboutStatus,"Connecting WebSocket");
-    lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi connected\nConfiguration loaded\nWebSocket not connected");
-    lv_obj_add_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
-  } else if ( bWiFiConnected ) {
-    lv_label_set_text(ui_LabelAboutStatus,"Loading configuration");
-    lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi connected\nConfiguration not loaded\nWebSocket not connected");
-    lv_obj_add_flag(ui_QrcodeLnurl, LV_OBJ_FLAG_HIDDEN);
-  } else {
-    lv_label_set_text(ui_LabelAboutStatus,"Connecting to Wi-Fi");
-    lv_label_set_text(ui_LabelConfigStatus,"Wi-Fi not connected\nConfiguration not loaded\nWebSocket not connected");
-    lv_obj_add_flag(ui_QrcodeLnurl, LV_OBJ_FLAG_HIDDEN);
+void setUIStatus(String shortMsg, String longMsg, bool bDisplayQRCode = false) {
+  static String prevShortMsg = "";
+  static String prevLongMsg = "";
+  static bool prevBDisplayQRCode = false;
+
+  if ( ! shortMsg.equals(prevShortMsg)) {
+    lv_label_set_text(ui_LabelAboutStatus,shortMsg.c_str());
+    prevShortMsg = shortMsg;    
+  }
+  
+  if ( ! longMsg.equals(prevLongMsg)) {
+    lv_label_set_text(ui_LabelConfigStatus,longMsg.c_str());
+    prevLongMsg = longMsg;
+  }
+
+  if ( bDisplayQRCode != prevBDisplayQRCode ) {
+    prevBDisplayQRCode = bDisplayQRCode;
+    if ( bDisplayQRCode ) {
+      lv_obj_clear_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
+    } else {
+      lv_obj_add_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
+    }
   }
 }
+
+
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_DISCONNECTED:
       if ( WiFi.status() == WL_CONNECTED ) {
-        setUIStatus(true,true,false,"WebSocket disconnected");                  
+        deviceState = CONNECTED;
       } else {
-        setUIStatus(false,false,false,"Wi-Fi not available");
+        deviceState = OFFLINE;
       }
       break;
     case WStype_CONNECTED:
       webSocket.sendTXT("Connected");
-      setUIStatus(true,true,true,"WebSocket connected");
+      deviceState = READY_TO_SERVE;
       break;
     case WStype_TEXT:
       {
@@ -309,31 +296,6 @@ void wantBierClicked(int item) {
   // todo: zet nog een label op het screen erbij  
 }
 
-void HttpEvent(HttpEvent_t *event)
-{
-    switch(event->event_id) {
-        case HTTP_EVENT_ERROR:
-            Serial.println("Http Event Error");
-            break;
-        case HTTP_EVENT_ON_CONNECTED:
-            Serial.println("Http Event On Connected");
-            break;
-        case HTTP_EVENT_HEADER_SENT:
-            Serial.println("Http Event Header Sent");
-            break;
-        case HTTP_EVENT_ON_HEADER:
-            Serial.printf("Http Event On Header, key=%s, value=%s\n", event->header_key, event->header_value);
-            break;
-        case HTTP_EVENT_ON_DATA:
-            break;
-        case HTTP_EVENT_ON_FINISH:
-            Serial.println("Http Event On Finish");
-            break;
-        case HTTP_EVENT_DISCONNECTED:
-            Serial.println("Http Event Disconnected");
-            break;
-    }
-}
 
 void myDelay(uint32_t ms) {
   delay(ms);
@@ -412,7 +374,7 @@ void saveConfig() {
 
 
 
-void getLNURLSettings(String deviceid) 
+bool getLNURLSettings(String deviceid) 
 {  
   // clear path
   config_wspath = "";
@@ -426,9 +388,14 @@ void getLNURLSettings(String deviceid)
   HTTPClient http;
   http.begin(config_url);
   int statusCode = http.GET();
-  if ( statusCode != HTTP_CODE_OK ) {
-    setUIStatus(true,false,false,"Invalid response when loading config");
-    return;
+  Serial.printf("Status code %d\n",statusCode);
+  if ( statusCode == HTTP_CODE_NOT_FOUND ) {
+    deviceState = ERROR_UNKNOWN_DEVICEID;
+    return false;
+  }
+  else if ( statusCode != HTTP_CODE_OK ) {
+    deviceState = ERROR_CONFIG_HTTP;
+    return false;
   }  
 
   // obtain the payload
@@ -438,7 +405,8 @@ void getLNURLSettings(String deviceid)
   StaticJsonDocument<2000> doc;
   DeserializationError error = deserializeJson(doc, payload);
   if ( error.code() !=  DeserializationError::Ok ) {
-    return;
+    deviceState = ERROR_CONFIG_JSON;
+    return false;
   }
 
   // clear current switches
@@ -494,6 +462,8 @@ void getLNURLSettings(String deviceid)
     default:
       break;
   }
+
+  return true;
 }
 
 
@@ -549,48 +519,79 @@ void setup()
   beerClose();
   webSocket.onEvent(webSocketEvent);
 
-  // Force WiFi to reconnect
-  bWiFiReconnect = true;
-
   // set label in the About screen
-  setUIStatus(false,false,false,"Initialized");
+  setUIStatus("Initialized","Initialized");
 
-  HttpsOTA.onHttpEvent(HttpEvent);
 }
 
 void loop()
 {
+  int retryInMillis = 0;
 
-  // reconnect to Wi-Fi 
-  if ( bWiFiReconnect ) {
-    bWiFiReconnect = false;
-    WiFi.disconnect();
-    WiFi.begin(config_wifi_ssid.c_str(),config_wifi_pwd.c_str());
-    setUIStatus(false,false, false,"Wi-Fi started");
-
-    bLoadDeviceSettings = true;
-  }
-
-  if ( bLoadDeviceSettings && WiFi.status() == WL_CONNECTED ) {
-    bLoadDeviceSettings = false;
-    setUIStatus(true,false, false,"Loading device settings");
-    getLNURLSettings(config_deviceid);
-    bWebSocketReconnect = true;
-  }
-
-  if ( bWebSocketReconnect && WiFi.status() == WL_CONNECTED && config_wspath.length() > 0 ) {
-    bWebSocketReconnect = false;
-    setUIStatus(true, true, false,"Connecting WebSocket");
-    webSocket.beginSSL(config_lnbitshost, 443, config_wspath);
-  }
-
+  // update handlers
   lv_timer_handler();  
-  webSocket.loop();
 
-  otastatus = HttpsOTA.status();
-  if(otastatus == HTTPS_OTA_SUCCESS)  {
-    Serial.println("Firmware written successfully. To reboot device, call API ESP.restart() or PUSH restart button on device");
-  } else if(otastatus == HTTPS_OTA_FAIL) { 
-    Serial.println("Firmware Upgrade Fail");
+  webSocket.loop();
+  // do something base on the state we are in
+  switch ( deviceState ) {
+    case OFFLINE:
+      setUIStatus("Initialized","Initialized");
+
+      // try to connect to WiFi
+      if ( config_wifi_ssid.length() > 0 ) {
+        WiFi.disconnect();
+        WiFi.begin(config_wifi_ssid.c_str(),config_wifi_pwd.c_str());
+        deviceState = CONNECTING;
+      }
+      break;
+    case CONNECTING:
+      setUIStatus("Connecting to Wi-Fi","Connecting to Wi-Fi");
+
+      if ( WiFi.status() == WL_CONNECTED ) {
+        deviceState = CONNECTED;
+      } 
+
+
+      break;
+    case CONNECTED:
+      setUIStatus("Wi-Fi connected","Connected to Wi-Fi network");
+      {
+        webSocket.setReconnectInterval(86400000);
+        webSocket.disconnect();
+        bool bResult = getLNURLSettings(config_deviceid);
+        if ( bResult == true ) {
+          deviceState = CONNECTING_WEBSOCKET;
+          webSocket.setReconnectInterval(1000);
+          webSocket.beginSSL(config_lnbitshost, 443, config_wspath);
+        }
+      }
+      break;
+    case CONNECTING_WEBSOCKET:
+      setUIStatus("Connecting WebSocket","Connecting WebSocket");
+      break;
+    case READY_TO_SERVE:
+      setUIStatus("Ready to Serve!","WebSocket Connected",true);
+      break;
+    case ERROR_UNKNOWN_DEVICEID:
+      setUIStatus("Configuration error","DeviceID incorrect");
+      break;
+    case ERROR_CONFIG_HTTP:
+      setUIStatus("Configuration error","Error response from LNbits");
+      retryInMillis = millis() + 10000;
+      deviceState = WAITING_FOR_RECONNECT;
+      break;
+    case ERROR_CONFIG_JSON:
+      setUIStatus("Configuration error","Error parsing JSON config");      
+      retryInMillis = millis() + 10000;
+      deviceState = WAITING_FOR_RECONNECT;
+    case WAITING_FOR_RECONNECT:
+      if ( millis() > retryInMillis ) {
+        deviceState = OFFLINE;
+      }
+      break;
+    default:
+      setUIStatus("Unknown state","Unknown device state");
+      deviceState = OFFLINE;
+      break;
   }
 }

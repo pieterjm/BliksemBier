@@ -115,11 +115,16 @@ async def lnurl_callback(
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="payment not found."
         )
+    
+    if payment.payhash == 'used':
+        return {"status": "ERROR", "reason": "Payment already used."}
+
     device = await get_device(payment.deviceid, request)
     if not device:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="device not found."
         )
+    
     
     switch = None
     for _switch in device.switches:
@@ -138,13 +143,14 @@ async def lnurl_callback(
         memo=device.title + " " + switch.label,
         unhashed_description=create_payment_metadata(device,switch).encode(),
         extra={
-            "tag": "Switch",
+            "tag": "BliksemBier",
             "Device": device.id,
             "Switch": switch.id,
             "amount": switch.amount,
             "currency": device.currency,
             "id": paymentid,
             "received": False,
+            "acknowledged": False,
             "fulfilled": False
         },
     )

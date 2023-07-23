@@ -85,7 +85,7 @@ async def api_lnurldevice_switches(req: Request, lnurldevice_id: str):
 )
 async def api_payment_received(req: Request, payment_hash: str):
     logger.info("Payment received");
-    await update_payment_extra(payment_hash=payment_hash, extra = { 'received':True})
+    await update_payment_extra(payment_hash=payment_hash, extra = { 'acknowledged':True})
     return 1;
 
 @bliksembier_ext.get(

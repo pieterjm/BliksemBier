@@ -127,17 +127,35 @@
     <q-card>
       <q-card-section>
         <h6 class="text-subtitle1 q-my-none">
-          {{SITE_TITLE}} BliksemBier Extension (0.1)
+          BliksemBier(version 2023.07.23)
         </h6>
       </q-card-section>
       <q-separator></q-separator>
-      <q-card-section>
+      <q-card-section>  
         <p>
-	  <img src="/bliksembier/static/image/bliksembier512.png" with="80%">
+          BliksemBier is an LNbits extension enables lightning payments for beertaps. Look <a href="https://github.com/pieterjm/BliksemBier/" class="text-secondary">here</a> for instructions on how to create such a beertap.
         </p>
-	<p>
-	  <esp-web-install-button manifest="/bliksembier/static/firmware/manifest.json" ></esp-web-install-button>
-	</p>
+        <p>
+          The beertap is driven by a Sunton Smartdisplay board (ESP32-3248S035R or ESP32-3248S035C). These are integrated boards that feature an ESP32, touch color display, SD-card slot and standard JST plugs to connect to other devices. 
+        </p>
+      	<p>
+          The firmware for the beertap can be flashed right here from within this browser. Connect the Smartdisplay board to your computer and make sure you are viewing this page with the Chrome web browser. Then select the desired version and hit the 'Flash' button. When in doubt, zoom out and choose capacitive.
+        </p>
+        <p>          
+          <select class="esp-select-board-type" name="esp-select-board-type">
+            <option value="--">Select your board</option>
+            <option value="ESP32_3248S035C">Capacitive (ESP32_3248S035C)</option>
+            <option value="ESP32_3248S035R">Resisitive (ESP32_3248S035R)</option>
+          </select>
+        </p>
+        <p>
+          <esp-web-install-button>
+            <button slot="activate">Flash</button>
+          </esp-web-install-button>
+      	</p>
+        <p>
+          Created by: <A href="https://github.com/pieterjm" class="text-secondary">Pieter Meulenhoff</A>
+        </p>
       </q-card-section>
     </q-card>
   </div>
@@ -674,5 +692,11 @@
         })
     }
   })
+
+  document.querySelector(".esp-select-board-type").addEventListener("change", (event) => {
+    document.querySelector('esp-web-install-button').manifest = `/bliksembier/static/firmware/${event.target.value}/manifest.json`;
+  });
+    
+    
 </script>
 {% endblock %}
