@@ -551,7 +551,6 @@ void loop()
         deviceState = CONNECTED;
       } 
 
-
       break;
     case CONNECTED:
       setUIStatus("Wi-Fi connected","Connected to Wi-Fi network");
@@ -586,7 +585,11 @@ void loop()
       deviceState = WAITING_FOR_RECONNECT;
     case WAITING_FOR_RECONNECT:
       if ( millis() > retryInMillis ) {
-        deviceState = OFFLINE;
+        if ( WiFi.isConnected() ) {
+          deviceState = CONNECTED;
+        } else {
+          deviceState = OFFLINE;
+        }
       }
       break;
     default:
