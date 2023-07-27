@@ -12,7 +12,7 @@ from lnbits.core.services import create_invoice
 from lnbits.core.views.api import pay_invoice
 from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
 
-from . import bliksembier_ext
+from . import bliksembier_ext, extname
 from .crud import (
     create_payment,
     get_device,
@@ -33,9 +33,16 @@ async def lnurl_v1_params(
 ):
     return await lnurl_params(request, device_id, switch_id)
 
+def create_payment_memo(device, switch) -> str:
+    memo = ""
+    if device.title:
+        memo += device.title
+    if switch.label:
+        memo += " "
+        memo += switch.label
 
 def create_payment_metadata(device, switch):
-    return json.dumps([["text/plain", device.title + " " + switch.label]])
+    return json.dumps([["text/plain", create_payment_memo(device,switch)]])
 
 @bliksembier_ext.get(
     "/api/v2/lnurl/{device_id}",
@@ -49,6 +56,8 @@ async def lnurl_v2_params(
 ):
     return await lnurl_params(request, device_id, switch_id)
 
+
+    return memo
 
 async def lnurl_params(
     request: Request,
@@ -140,10 +149,10 @@ async def lnurl_callback(
     payment_hash, payment_request = await create_invoice(
         wallet_id=device.wallet,
         amount=int(payment.sats / 1000),
-        memo=device.title + " " + switch.label,
+        memo=create_payment_memo(device,switch),
         unhashed_description=create_payment_metadata(device,switch).encode(),
         extra={
-            "tag": "BliksemBier",
+            "tag": extname,
             "Device": device.id,
             "Switch": switch.id,
             "amount": switch.amount,

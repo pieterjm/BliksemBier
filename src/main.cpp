@@ -65,7 +65,8 @@ enum DeviceState {
   ERROR_CONFIG_HTTP = 7,
   ERROR_CONFIG_JSON = 8,
   CONNECTING_WEBSOCKET = 9,
-  WAITING_FOR_RECONNECT = 10
+  WAITING_FOR_RECONNECT = 10,
+  ERROR_CONFIG_GENERAL = 11
 };
 
 DeviceState deviceState = OFFLINE;
@@ -570,6 +571,11 @@ void loop()
       break;
     case READY_TO_SERVE:
       setUIStatus("Ready to Serve!","WebSocket Connected",true);
+      break;
+    case ERROR_CONFIG_GENERAL:
+      setUIStatus("Configuration error","Could not load configuration");
+      retryInMillis = millis() + 10000;
+      deviceState = WAITING_FOR_RECONNECT;
       break;
     case ERROR_UNKNOWN_DEVICEID:
       setUIStatus("Configuration error","DeviceID incorrect");

@@ -5,6 +5,7 @@ from lnbits.core.services import websocketUpdater
 from lnbits.helpers import get_current_extension_name
 from lnbits.tasks import register_invoice_listener
 from lnbits.core.crud import get_user, update_payment_extra
+from . import extname
 
 from .crud import get_payment, update_payment
 
@@ -21,8 +22,9 @@ async def wait_for_paid_invoices():
 
 
 async def on_invoice_paid(payment: Payment) -> None:
-    # (avoid loops)
-    logger.info(payment.extra)
+    # Check that the payment is intended for this extension
+    if payment.extra["tag"] != extname:
+        return
 
     device_payment = await get_payment(payment.extra["id"])
 
