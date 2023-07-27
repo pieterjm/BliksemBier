@@ -12,7 +12,7 @@ from lnbits.core.services import create_invoice
 from lnbits.core.views.api import pay_invoice
 from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
 
-from . import bliksembier_ext, extname
+from . import bliksembier_ext
 from .crud import (
     create_payment,
     get_device,
@@ -40,6 +40,7 @@ def create_payment_memo(device, switch) -> str:
     if switch.label:
         memo += " "
         memo += switch.label
+    return memo
 
 def create_payment_metadata(device, switch):
     return json.dumps([["text/plain", create_payment_memo(device,switch)]])
@@ -152,7 +153,7 @@ async def lnurl_callback(
         memo=create_payment_memo(device,switch),
         unhashed_description=create_payment_metadata(device,switch).encode(),
         extra={
-            "tag": extname,
+            "tag": "BliksemBier",
             "Device": device.id,
             "Switch": switch.id,
             "amount": switch.amount,

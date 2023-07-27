@@ -9,7 +9,6 @@ from lnbits.helpers import template_renderer
 from lnbits.tasks import catch_everything_and_restart
 
 
-extname = "BliksemBier"
 
 db = Database("ext_bliksembier")
 
