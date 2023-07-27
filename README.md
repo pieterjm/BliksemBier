@@ -1,7 +1,7 @@
 
 # BliksemBier, a Bitcoin Lightning enabled beertap
 
-BliksemBier is a beertap that accepts Bitcoin. 
+BliksemBier is a beertap that accepts Bitcoin. BliksemBier consists of two components: na LNbits extension and firmware for an ESP32-based smart display (Sunton).  
 
 ## Configuration 
 
