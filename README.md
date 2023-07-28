@@ -3,6 +3,7 @@
 
 BliksemBier is a beertap that accepts Bitcoin. BliksemBier consists of two components: na LNbits (https://github.com/lnbits/lnbits) extension and firmware for an ESP32-based smart display (made by Sunton). The firmware for the tap is created in such a way that can be used for different beertap types. For 5L draught kegs to professional beertaps. The following pictures illustrate some of the applications of BliksemBier.
 
+<p><img src="Assets/xaptap-mitbierglas.jpg" alt="XapTap" style="width: 50%" /><br>Fixture for a standard beertap, the <A href="https://plebtap.de/produkt/xaptap/">XapTap</A> made by PlebTap.</p>
 
 
 
