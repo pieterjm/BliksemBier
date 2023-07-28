@@ -5,36 +5,89 @@ BliksemBier is a beertap that accepts Bitcoin. BliksemBier consists of two compo
 
 <img src="Assets/bliksembier_tapvat.jpg" alt="Fixture for 5L draught keg" style="width: 40%" /> <img src="Assets/xaptap-mitbierglas.jpg" alt="Fixture for a standard beertap, the XapTap made by PlebTap." style="width: 40%" />
 
+If you want to obtain or create such a beertap, you can buy one or create one yourself (see the [build instructions](#build-instructions) for more details). All components, except for the metal sheet, are readily available. The design for the metal sheet is available <a href="Hardware/draught_key_sheet_bliksembier.dxf">here</a>. This should be laser cut out of a 1mm - 1.5mm stainless steel sheet. As that can be quite expensive for a few items, you can also obtain one from me. Contact <a href="mailto:bliksembier@meulenhoff.org">me</a> for details.
 
+<img src="Assets/bliksembier_fixture.jpg" style="width: 40%"/>
 
+## Contact and support
 
-## Configuration 
+If you want to contact me directly, send an e-mail to <a href="mailto:bliksembier@meulenhoff.org">bliksembier@meulenhoff.org</a>.
+
+You can also join the Telegram group (https://t.me/+NLCoqbPB_ro1NzRk). 
+
+## Installation
 
 To get the beertap up and running, take the following steps:
 
-1. Open a webbrowser, navigate to: https://lnbits.meulenhoff.org and create a wallet.
-2. Add the LNURLdevice extension to the wallet.
-3. Create an LNURLDevice by clicking 'NEW LNURLDEVICE INSTANCE'. 
-4. Configure the LNURLDevice, make sure that the type is set to 'Switch'.
-5. Add one or more (max three) switches by clicking on the '+' button. Configure price, duration and Label for each switch. 
+1. Make sure your LNbits server has the BliksemBier extension installed. If not contact the administrator of your LNbits server and ask to install the BliksemBier extension from the following source:
+   ```
+   https://lnbits.meulenhoff.org/extensions/extensions.json
+   ```
+2. In LNbits, add the BliksemBier extension to your wallet.
+3. Select the 'BliksemBier' extension and clik the 'New Device' button.
+4. Configure the device with a title, wallet, currency and at least one switch (up to three switches are supported). If unsure, no problem, you can change the configuration anytime.
   * The duration is the amount of milliseconds, the tap is switched on.
   * The Label button is displayed on the tap. For instance 'SMALL' or 'LARGE'. Currently, only a limited subset of characters is support (CAPS ONLY).
-6. Click 'CREATE LNURLDEVICE' and record the ID of the LNURLdevice (8 charachters).
+5. Click 'CREATE DEVICE' and record the ID of the LNURLdevice (8 charachters).
 
-Now move over to the beertap itself.
+Now move over to the beertap itself. If you need to flash (new) firmware to the device, go to step 12.
 
-7. Power on the beertap and click the 'Config' button.
-8. Enter the PIN (the initial PIN is 123456)
-9. Configure SSID and Secret to connect the tap to a Wi-Fi network.
-10. Make sure that LNbits host is set to: lnbits.meulenhoff.org
-11. Set 'Device ID' to the ID of the LNURL device (from step 6). 
-12. Click connect. 
+6. Power on the beertap and click the 'Config' button.
+7. Enter the PIN (the initial PIN is 123456)
+8. Configure SSID and Secret to connect the tap to a Wi-Fi network.
+9. Make sure that LNbits host is set to: lnbits.meulenhoff.org
+10. Set 'Device ID' to the ID of the LNURL device (from step 6). 
+11. Click connect. 
 
-If all went as planned, the status says: Wi-Fi connected, Configuration loaded and finally WebSocket connected. 
+If all went as planned, the status says: Wi-Fi connected, Configuration loaded, WebSocket connected and 'Ready to Serve!'. You can click on one of the buttons and scan the QR code. 
+
+The flash new firmware on the device, make sure you are using LNbits with the Chrome (or Edge) browser.
+
+12. Connect the Micro USB port of the ESP32 to your computer.
+13. In the BliksemBier extension, select the correct ESP32 board and click the flash button to start the flashing process.
+  * In some cases, flashing only works the second time.
+  * The 'Boot button' that is mentioned during flashing is typically not required. However, the boot button is located on the back of the ESP32 device (next to the reset button). Pressing both at the same time (while having the ESP32 connected to your computer) usually does the trick.
   
-## Compilation
+## Required components
 
-BliksemBier is created with platform.io. 
+A list of components required to build a BliksemBier tap for 5L draught kegs:
+
+  * Sunton ESP32 Capacitive touch display 3.5 inch (https://aliexpress.com/item/1005004632953455.html)
+  * One MG995 servo
+  * 2 JST 1.25 connectors
+  * A stainless sheet fixture
+  * USB-C connector for power (https://www.aliexpress.com/item/1005005137763022.html)
+  * USB 5V power source of at least 2A @ 5V
+  * Some screws and wiring:
+    * 4 M3 bolts
+    * 4 4mm spacers
+    * 8 M3 nuts
+    * 1 M4 bolt
+    * 1 M4 Locking nut
+  * A box for the backside, Conrad (Kunststof behuizing zwart 123x30x70mm)
+  * soldering utensils and a small piece of heat shrink
+     
+## Build  instructions
+
+Both the ESP32 and the Servo are powered from the 5V source. As the servo is quite strong, a weak power source will result in glitches of the display. Make sure your power source is strong enough. Also it is important not to pass the current for the servo through the ESP32. This means that both the ESP32 and the Servo are directly powered from the same 5V power source. Use the following guidelines to connect everything.
+
+  * The 5V power connects to the VCC of the ESP32 and the power input of the servo (middle cable)
+  * The GND of the power input connects to the GND of the ESP32 and the GND of the servo (black cable)
+  * Port 21 of the ESP32 connects to the signal input of the servo (Yellow cable).
+
+Connecting everything together may require some soldering and heat shrink. 
+
+<img src="/Assets/bliksembier_internals.jpg" style="width: 40%" />
+
+
+
+
+
+
+
+
+
+## Compilation
 
 To compile the project from within Visual Studio Code using platform.io, take the following steps:
 
