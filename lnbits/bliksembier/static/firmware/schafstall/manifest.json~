@@ -1,6 +1,6 @@
 {
   "name": "BliksemBier",
-  "version": "2023.08.01",
+  "version": "2023.07.23",
   "new_install_prompt_erase": true,
   "builds": [
     {

@@ -127,7 +127,7 @@
     <q-card>
       <q-card-section>
         <h6 class="text-subtitle1 q-my-none">
-          BliksemBier(version 2023.07.24)
+          BliksemBier(version 2023.08.01)
         </h6>
       </q-card-section>
       <q-separator></q-separator>
@@ -136,16 +136,17 @@
           BliksemBier is an LNbits extension enables lightning payments for beertaps. Look <a href="https://github.com/pieterjm/BliksemBier/" class="text-secondary">here</a> for instructions on how to create such a beertap.
         </p>
         <p>
-          The beertap is driven by a Sunton Smartdisplay board (ESP32-3248S035R or ESP32-3248S035C). These are integrated boards that feature an ESP32, touch color display, SD-card slot and standard JST plugs to connect to other devices. 
+          The beertap is driven by a Sunton Smartdisplay board. These are integrated boards that feature an ESP32, touch color display, SD-card slot and standard JST plugs to connect to other devices. 
         </p>
       	<p>
           The firmware for the beertap can be flashed right here from within this browser. Connect the Smartdisplay board to your computer and make sure you are viewing this page with the Chrome web browser. Then select the desired version and hit the 'Flash' button. When in doubt, zoom out and choose capacitive.
         </p>
-        <p>          
+        <p>
           <select class="esp-select-board-type" name="esp-select-board-type">
             <option value="--">Select your board</option>
-            <option value="ESP32_3248S035C">Capacitive (ESP32_3248S035C)</option>
-            <option value="ESP32_3248S035R">Resisitive (ESP32_3248S035R)</option>
+            <option value="ESP32_3248S035C">ESP32_3248S035C (Capacitive touch)</option>
+            <option value="ESP32_3248S035R">ESP32_3248S035R (Resistive touch)</option>
+            <option value="schafstall">Schafstall</option>
           </select>
         </p>
         <p>
@@ -153,6 +154,17 @@
             <button slot="activate">Flash</button>
           </esp-web-install-button>
       	</p>
+	<p>
+	  After flashing, perform the following steps:
+	  <ol>
+	    <li>Click the Config button to enter the configuration screen. The default PIN is 123456.</li>
+	    <li>Enter Wi-Fi network SSID and password.</li>
+	    <li>Enter the hostname of this LNbits server: <i>{% raw %}{{hostname}}{% endraw %}</i> </li>
+	    <li>Enter the device id of the configured BliksemBier device.</li>
+	    <li>Click 'CONNECT' and verify the the message says 'WebSocket connected'.</li>
+	    <li>Click 'TUNER' and configure the servo positions for open/close and clean. Click 'SAVE SETTINGS' to save the servo settings. The buttons 'OPEN', 'CLOSE' and 'CLEAN' can be used to test the saved(!) settings.</li>
+	  </ol>
+	</p>
         <p>
           Created by: <A href="https://github.com/pieterjm" class="text-secondary">Pieter Meulenhoff</A>
         </p>
@@ -387,6 +399,7 @@
     data: function () {
       return {
         tab: 'mails',
+        hostname: window.location.host,
         protocol: window.location.protocol,
         location: window.location.hostname,
         wslocation: window.location.hostname,

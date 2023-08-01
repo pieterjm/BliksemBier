@@ -59,33 +59,28 @@ A list of components required to build a BliksemBier tap for 5L draught kegs:
   * USB-C connector for power (https://www.aliexpress.com/item/1005005137763022.html)
   * USB 5V power source of at least 2A @ 5V
   * Some screws and wiring:
-    * 4 M3 bolts
+    * 4 M3 bolts (20 mm)
     * 4 4mm spacers
     * 8 M3 nuts
-    * 1 M4 bolt
+    * 1 M4 bolt (15 mm)
     * 1 M4 Locking nut
-  * A box for the backside, Conrad (Kunststof behuizing zwart 123x30x70mm)
+  * A box for the backside (I used a Strapubox 2515)
   * soldering utensils and a small piece of heat shrink
      
 ## Build  instructions
 
 Both the ESP32 and the Servo are powered from the 5V source. As the servo is quite strong, a weak power source will result in glitches of the display. Make sure your power source is strong enough. Also it is important not to pass the current for the servo through the ESP32. This means that both the ESP32 and the Servo are directly powered from the same 5V power source. Use the following guidelines to connect everything.
 
-  * The 5V power connects to the VCC of the ESP32 and the power input of the servo (middle cable)
+  * The 5V power connects to the VIN of the ESP32 and the power input of the servo (middle cable)
   * The GND of the power input connects to the GND of the ESP32 and the GND of the servo (black cable)
   * Port 21 of the ESP32 connects to the signal input of the servo (Yellow cable).
+  * Use the JST connectors to connect both power and signal (PIN 21). 
 
-Connecting everything together may require some soldering and heat shrink. 
+Connecting everything together may require some soldering and heat shrink. A closeup of the backside should like similar to the following.
 
 <img src="/Assets/bliksembier_internals.jpg" style="width: 40%" />
 
-
-
-
-
-
-
-
+The box for the backside of the tap is a converted strapubox that comes in two identical covers. I cut of the rims of the box, made a hole for the USBC connector and drilled four holes to mount the cover on the same bolts that mount the display to the metal fixture.
 
 ## Compilation
 

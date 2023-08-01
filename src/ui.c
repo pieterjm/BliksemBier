@@ -610,7 +610,9 @@ void ui_ScreenAbout_screen_init(void)
     ui_Image1 = lv_img_create(ui_ScreenAbout);
 
 #if BB_ABOUT == 1
-    lv_img_set_src(ui_Image1, &ui_img_1898_logo256_png);
+    lv_img_set_src(ui_Image1, &ui_img_1898_logo256_png); // schaffstall
+#elif BB_ABOUT == 2
+    lv_img_set_src(ui_Image1, &ui_img_schafstall256_png);  // schaffstall
 #else
     lv_img_set_src(ui_Image1, &ui_img_kanhetal256_png);
 #endif
