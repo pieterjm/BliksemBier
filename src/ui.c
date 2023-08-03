@@ -1,8 +1,3 @@
-// SquareLine LVGL GENERATED FILE
-// EDITOR VERSION: SquareLine Studio 1.2.1
-// LVGL VERSION: 8.3.4
-// PROJECT: SquareLine_Project4
-
 #include "ui.h"
 #include "ui_helpers.h"
 
@@ -174,10 +169,10 @@ void ui_event_ButtonBierStart(lv_event_t * e);
 
 ///////////////////// TEST LVGL SETTINGS ////////////////////
 #if LV_COLOR_DEPTH != 16
-    #error "LV_COLOR_DEPTH should be 16bit to match SquareLine Studio's settings"
+    #error "LV_COLOR_DEPTH should be 16bit"
 #endif
 #if LV_COLOR_16_SWAP !=0
-    #error "LV_COLOR_16_SWAP should be 0 to match SquareLine Studio's settings"
+    #error "LV_COLOR_16_SWAP should be 0"
 #endif
 
 ///////////////////// ANIMATIONS ////////////////////
@@ -1107,7 +1102,10 @@ void ui_ScreenConfig_screen_init(void)
     lv_obj_set_width(ui_Label23, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_Label23, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_Label23, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_Label23, "CONFIGURATION");
+#define STR1(x)  #x
+#define STR(x)  STR1(x)    
+#define VERSION_LABEL "VERSION " STR(FIRMWARE_VERSION)
+    lv_label_set_text(ui_Label23, VERSION_LABEL);
     lv_obj_set_style_text_color(ui_Label23, lv_color_hex(BB_FGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_Label23, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_Label23, &ui_font_FontBoucherieBlock24, LV_PART_MAIN | LV_STATE_DEFAULT);

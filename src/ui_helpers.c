@@ -1,8 +1,3 @@
-// SquareLine LVGL GENERATED FILE
-// EDITOR VERSION: SquareLine Studio 1.2.1
-// LVGL VERSION: 8.3.4
-// PROJECT: SquareLine_Project4
-
 #include "ui_helpers.h"
 
 void _ui_bar_set_property(lv_obj_t * target, int id, int val)

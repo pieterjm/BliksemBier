@@ -1,8 +1,3 @@
-// SquareLine LVGL GENERATED FILE
-// EDITOR VERSION: SquareLine Studio 1.2.1
-// LVGL VERSION: 8.3.4
-// PROJECT: SquareLine_Project4
-
 #include "ui.h"
 
 #ifndef LV_ATTRIBUTE_MEM_ALIGN

@@ -1,9 +1,3 @@
-/*******************************************************************************
- * Size: 24 px
- * Bpp: 1
- * Opts: --bpp 1 --size 24 --font /home/nl077-lab-0028/Downloads/SquarLine_Studio/Test Project/assets/Boucherie Block.otf -o /home/nl077-lab-0028/Downloads/SquarLine_Studio/Test Project/assets/ui_font_FontBoucherieBlock24.c --format lvgl -r 0x20 --symbols ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_!*. --no-compress --no-prefilter
- ******************************************************************************/
-
 #include "ui.h"
 
 #ifndef UI_FONT_FONTBOUCHERIEBLOCK24

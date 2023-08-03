@@ -56,17 +56,21 @@ lv_obj_t *ui_QrcodeLnurl = NULL; // the QR code object
 
 // state
 enum DeviceState {
+  NONE = 0,
   OFFLINE = 1,
   CONNECTING = 2,
   CONNECTED = 3, 
-  CONFIGURED = 4, 
+  CONNECTING_WEBSOCKET = 4,
   READY_TO_SERVE = 5,
   ERROR_UNKNOWN_DEVICEID = 6,
   ERROR_CONFIG_HTTP = 7,
   ERROR_CONFIG_JSON = 8,
-  CONNECTING_WEBSOCKET = 9,
+  CONFIGURED = 9, 
   WAITING_FOR_RECONNECT = 10,
-  ERROR_CONFIG_GENERAL = 11
+  ERROR_CONFIG_GENERAL = 11,
+  ERROR_CONFIG_DNS = 12,
+  INIT_RECONNECT = 13,
+  ERROR_CONFIG_SSID = 14
 };
 
 DeviceState deviceState = OFFLINE;
@@ -196,12 +200,12 @@ void beerScreen()
 	lv_obj_clear_flag(ui_ButtonBierStart,LV_OBJ_FLAG_HIDDEN);
   lv_bar_set_value(ui_BarBierProgress,0,LV_ANIM_OFF);
 	lv_disp_load_scr(ui_ScreenBierFlowing);	
-	//lv_timer_t *timer = lv_timer_create(beerTimerFinished, config_tap_duration, NULL);
 }
 
 void beerStart()
 {
-  lv_timer_t *timer = lv_timer_create(beerTimerProgress, tap_duration / 10, NULL);
+  int tapstep = tap_duration / 10;
+  lv_timer_t *timer = lv_timer_create(beerTimerProgress, tapstep, NULL);
   lv_timer_set_repeat_count(timer,10);
   lv_obj_add_flag(ui_ButtonBierStart,LV_OBJ_FLAG_HIDDEN);
 	lv_obj_clear_flag(ui_BarBierProgress,LV_OBJ_FLAG_HIDDEN);
@@ -215,27 +219,25 @@ void freeBeerClicked()
 }
 
 void setUIStatus(String shortMsg, String longMsg, bool bDisplayQRCode = false) {
-  static String prevShortMsg = "";
-  static String prevLongMsg = "";
+
+  // do nothing when the state is not changed  
+  static DeviceState prevDeviceState = NONE;
+  if ( deviceState == prevDeviceState ) {
+    return;
+  }
+
+  Serial.printf("Changing state from %d to %d\n",prevDeviceState,deviceState);
+  prevDeviceState = deviceState;
+
   static bool prevBDisplayQRCode = false;
 
-  if ( ! shortMsg.equals(prevShortMsg)) {
-    lv_label_set_text(ui_LabelAboutStatus,shortMsg.c_str());
-    prevShortMsg = shortMsg;    
-  }
+  lv_label_set_text(ui_LabelAboutStatus,shortMsg.c_str());
+  lv_label_set_text(ui_LabelConfigStatus,longMsg.c_str());
   
-  if ( ! longMsg.equals(prevLongMsg)) {
-    lv_label_set_text(ui_LabelConfigStatus,longMsg.c_str());
-    prevLongMsg = longMsg;
-  }
-
-  if ( bDisplayQRCode != prevBDisplayQRCode ) {
-    prevBDisplayQRCode = bDisplayQRCode;
-    if ( bDisplayQRCode ) {
-      lv_obj_clear_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
-    } else {
-      lv_obj_add_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
-    }
+  if ( bDisplayQRCode ) {
+    lv_obj_clear_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_add_flag(ui_QrcodeLnurl,LV_OBJ_FLAG_HIDDEN);
   }
 }
 
@@ -247,7 +249,8 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       if ( WiFi.status() == WL_CONNECTED ) {
         deviceState = CONNECTED;
       } else {
-        deviceState = OFFLINE;
+        setUIStatus("Wi-Fi disconnected","Wi-Fi disconnected");
+        deviceState = CONNECTING;
       }
       break;
     case WStype_CONNECTED:
@@ -256,11 +259,11 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       break;
     case WStype_TEXT:
       {
-        Serial.println("Go a WebSocket Message");
+        Serial.println("Got a WebSocket Message");
         DynamicJsonDocument doc(2000);
         DeserializationError error = deserializeJson(doc, (char *)payload);
         if ( error.code() !=  DeserializationError::Ok ) {
-          Serial.println("Error JSON parse");
+          Serial.println("Error in JSON parsing");
           return;
         }
 
@@ -272,6 +275,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
           payment_hash = doc["payment_hash"].as<String>();
           String payload = doc["payload"].as<String>();
           tap_duration = atoi(payload.c_str());
+          Serial.printf("Tap duration received: %d\n",tap_duration);
           beerScreen();
           notifyOrderReceived();
         }
@@ -389,15 +393,19 @@ bool getLNURLSettings(String deviceid)
   HTTPClient http;
   http.begin(config_url);
   int statusCode = http.GET();
-  Serial.printf("Status code %d\n",statusCode);
   if ( statusCode == HTTP_CODE_NOT_FOUND ) {
     deviceState = ERROR_UNKNOWN_DEVICEID;
+    return false;
+  }
+  else if ( statusCode == -1 ) {
+    deviceState = ERROR_CONFIG_DNS;
     return false;
   }
   else if ( statusCode != HTTP_CODE_OK ) {
     deviceState = ERROR_CONFIG_HTTP;
     return false;
   }  
+ 
 
   // obtain the payload
   String payload = http.getString();                
@@ -527,7 +535,7 @@ void setup()
 
 void loop()
 {
-  int retryInMillis = 0;
+  static unsigned long retryInMillis = 0;
 
   // update handlers
   lv_timer_handler();  
@@ -548,9 +556,21 @@ void loop()
     case CONNECTING:
       setUIStatus("Connecting to Wi-Fi","Connecting to Wi-Fi");
 
-      if ( WiFi.status() == WL_CONNECTED ) {
-        deviceState = CONNECTED;
-      } 
+      switch ( WiFi.status() ) {
+        case WL_CONNECTED:
+          deviceState = CONNECTED;
+          break;
+        case WL_NO_SSID_AVAIL:
+          deviceState = ERROR_CONFIG_SSID;   
+          break;
+        case WL_CONNECTION_LOST:
+        case WL_IDLE_STATUS:
+        case WL_DISCONNECTED:
+          // disconnected
+          break;
+        default:
+          break;
+      }
 
       break;
     case CONNECTED:
@@ -570,25 +590,36 @@ void loop()
       setUIStatus("Connecting WebSocket","Connecting WebSocket");
       break;
     case READY_TO_SERVE:
-      setUIStatus("Ready to Serve!","WebSocket Connected",true);
+      setUIStatus("Ready to Serve!","WebSocket Connected, ready to serve!",true);
+      break;
+    case ERROR_CONFIG_DNS:
+      setUIStatus("Configuration error","LNbits host unreachable");
+      deviceState = INIT_RECONNECT;
       break;
     case ERROR_CONFIG_GENERAL:
       setUIStatus("Configuration error","Could not load configuration");
-      retryInMillis = millis() + 10000;
-      deviceState = WAITING_FOR_RECONNECT;
+      deviceState = INIT_RECONNECT;
       break;
     case ERROR_UNKNOWN_DEVICEID:
       setUIStatus("Configuration error","DeviceID incorrect");
+      deviceState = INIT_RECONNECT;
       break;
     case ERROR_CONFIG_HTTP:
       setUIStatus("Configuration error","Error response from LNbits");
-      retryInMillis = millis() + 10000;
-      deviceState = WAITING_FOR_RECONNECT;
+      deviceState = INIT_RECONNECT;
       break;
     case ERROR_CONFIG_JSON:
       setUIStatus("Configuration error","Error parsing JSON config");      
+      deviceState = INIT_RECONNECT;
+      break;
+    case ERROR_CONFIG_SSID:
+      setUIStatus("Configuration error","SSID not found");
+      deviceState = INIT_RECONNECT;
+      break;
+    case INIT_RECONNECT:
       retryInMillis = millis() + 10000;
       deviceState = WAITING_FOR_RECONNECT;
+      break;
     case WAITING_FOR_RECONNECT:
       if ( millis() > retryInMillis ) {
         if ( WiFi.isConnected() ) {
@@ -600,7 +631,7 @@ void loop()
       break;
     default:
       setUIStatus("Unknown state","Unknown device state");
-      deviceState = OFFLINE;
+      deviceState = INIT_RECONNECT;
       break;
   }
 }
