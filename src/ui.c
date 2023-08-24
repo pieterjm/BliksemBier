@@ -218,7 +218,8 @@ void ui_event_ButtonMainAbout(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
     lv_obj_t * target = lv_event_get_target(e);
     if(event_code == LV_EVENT_CLICKED) {
-        _ui_screen_change(ui_ScreenAbout, LV_SCR_LOAD_ANIM_NONE, 0, 0);
+        //_ui_screen_change(ui_ScreenAbout, LV_SCR_LOAD_ANIM_NONE, 0, 0);
+        ButtonMainBackClicked(e);
     }
 }
 void ui_event_Button1(lv_event_t * e)
@@ -602,12 +603,15 @@ void ui_ScreenAbout_screen_init(void)
     lv_obj_set_style_text_opa(ui_Label17, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_Label17, &ui_font_FontBoucherieBlock24, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+
     ui_Image1 = lv_img_create(ui_ScreenAbout);
 
 #if BB_ABOUT == 1
     lv_img_set_src(ui_Image1, &ui_img_1898_logo256_png); // schaffstall
 #elif BB_ABOUT == 2
     lv_img_set_src(ui_Image1, &ui_img_schafstall256_png);  // schaffstall
+#elif BB_ABOUT == 3
+    lv_img_set_src(ui_Image1, &ui_img_wannabeer256_png);  // schaffstall
 #else
     lv_img_set_src(ui_Image1, &ui_img_kanhetal256_png);
 #endif
@@ -690,6 +694,7 @@ void ui_ScreenAbout_screen_init(void)
     lv_obj_set_style_text_color(ui_LabelAboutThree, lv_color_hex(BB_FGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_LabelAboutThree, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_LabelAboutThree, &ui_font_FontBoucherieBlock24, LV_PART_MAIN | LV_STATE_DEFAULT);
+
 
 
     lv_obj_add_event_cb(ui_ButtonAboutOne, ui_event_ButtonAboutOne, LV_EVENT_ALL, NULL);

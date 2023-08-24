@@ -202,13 +202,16 @@ void ButtonAboutOneClicked(lv_event_t * e);
 void ButtonAboutTwoClicked(lv_event_t * e);
 void ButtonAboutThreeClicked(lv_event_t * e);
 void ButtonFreeClicked(lv_event_t * e );
+void ButtonMainBackClicked(lv_event_t * e);
 
 #if BB_ABOUT == 1 
     LV_IMG_DECLARE(ui_img_1898_logo256_png);  // 1898
 #elif BB_ABOUT == 2
     LV_IMG_DECLARE(ui_img_schafstall256_png);  // schaffstall
+#elif BB_ABOUT == 3
+    LV_IMG_DECLARE(ui_img_wannabeer256_png);  // wannabeer
 #else
-    LV_IMG_DECLARE(ui_img_kanhetal256_png);    // assets/kanhetal256.png
+    LV_IMG_DECLARE(ui_img_kanhetal256_png);    // kan het al
 #endif
 
 LV_IMG_DECLARE(ui_img_329557545);    // assets/qr-code-slagschaduw-274x274-v2.png
