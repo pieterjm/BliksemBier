@@ -1,0 +1,28 @@
+{
+    "name": "BliksemBier",
+    "version": "2023.08.22",
+    "new_install_prompt_erase": true,
+    "builds": [
+        {
+            "chipFamily": "ESP32",
+            "parts": [
+                {
+                    "path": "/bliksembier/static/firmware/ESP32_3248S035C_INV/bootloader.bin",
+                    "offset": 4096
+                },
+                {
+                    "path": "/bliksembier/static/firmware/ESP32_3248S035C_INV/partitions.bin",
+                    "offset": 32768
+                },
+                {
+                    "path": "/bliksembier/static/firmware/ESP32_3248S035C_INV/boot_app0.bin",
+                    "offset": 57344
+                },
+                {
+                    "path": "/bliksembier/static/firmware/ESP32_3248S035C_INV/firmware.bin",
+                    "offset": 65536
+                }
+            ]
+        }
+    ]
+}
