@@ -612,14 +612,17 @@ void ui_ScreenAbout_screen_init(void)
     ui_Image1 = lv_img_create(ui_ScreenAbout);
 
 #if BB_ABOUT == 1
-    lv_img_set_src(ui_Image1, &ui_img_1898_logo256_png); // schaffstall
+    lv_img_set_src(ui_Image1, &ui_img_1898_logo256_png); // 1898 logo
 #elif BB_ABOUT == 2
-    lv_img_set_src(ui_Image1, &ui_img_schafstall256_png);  // schaffstall
+    lv_img_set_src(ui_Image1, &ui_img_schafstall256_png);  // schaffstall logo
 #elif BB_ABOUT == 3
-    lv_img_set_src(ui_Image1, &ui_img_wannabeer256_png);  // schaffstall
+    lv_img_set_src(ui_Image1, &ui_img_wannabeer256_png);  // wannabeer logo
+#elif BB_ABOUT == 4
+    lv_img_set_src(ui_Image1, &ui_img_bliksembier_lab3_png);  // lab3 logo
 #else
-    lv_img_set_src(ui_Image1, &ui_img_kanhetal256_png);
+    lv_img_set_src(ui_Image1, &ui_img_kanhetal256_png);  // kan het al logp
 #endif
+
     lv_obj_set_width(ui_Image1, LV_SIZE_CONTENT);   /// 256
     lv_obj_set_height(ui_Image1, LV_SIZE_CONTENT);    /// 256
     lv_obj_set_y(ui_Image1, -50);

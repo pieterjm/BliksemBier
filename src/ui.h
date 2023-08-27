@@ -217,6 +217,8 @@ void ButtonMainBackClicked(lv_event_t * e);
     LV_IMG_DECLARE(ui_img_schafstall256_png);  // schaffstall
 #elif BB_ABOUT == 3
     LV_IMG_DECLARE(ui_img_wannabeer256_png);  // wannabeer
+#elif BB_ABOUT == 4
+    LV_IMG_DECLARE(ui_img_bliksembier_lab3_png);  // lab 3
 #else
     LV_IMG_DECLARE(ui_img_kanhetal256_png);    // kan het al
 #endif
