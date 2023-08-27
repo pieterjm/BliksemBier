@@ -184,3 +184,14 @@ async def get_lnurlpayload(
     )
     return LnurldevicePayment(**row) if row else None
 
+def create_payment_memo(device, switch) -> str:
+    memo = ""
+    if device.title:
+        memo += device.title
+    if switch.label:
+        memo += " "
+        memo += switch.label
+    return memo
+
+def create_payment_metadata(device, switch):
+    return json.dumps([["text/plain", create_payment_memo(device,switch)]])
