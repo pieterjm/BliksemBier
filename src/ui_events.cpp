@@ -222,5 +222,5 @@ void ButtonFreeClicked(lv_event_t *e)
 }
 
 void ButtonMainBackClicked(lv_event_t *e) {
-	loadStartScreen();
+	backToAboutPageNow();
 }

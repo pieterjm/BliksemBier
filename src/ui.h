@@ -18,6 +18,8 @@ extern lv_obj_t * ui_ButtonAboutThree;
 extern lv_obj_t * ui_LabelAboutOne;
 extern lv_obj_t * ui_LabelAboutTwo;
 extern lv_obj_t * ui_LabelAboutThree;
+extern lv_obj_t * ui_PanelAboutMessage;
+extern lv_obj_t * ui_LabelAboutMessage;
 void ui_event_ButtonAboutOne(lv_event_t * e);
 void ui_event_ButtonAboutTwo(lv_event_t * e);
 void ui_event_ButtonAboutThree(lv_event_t * e);
@@ -30,12 +32,17 @@ extern lv_obj_t * ui_ButtonMainConfig;
 extern lv_obj_t * ui_Label4;
 void ui_event_ButtonMainAbout(lv_event_t * e);
 extern lv_obj_t * ui_ButtonMainAbout;
+extern lv_obj_t * ui_QrcodeLnurl;
 extern lv_obj_t * ui_Label18;
 extern lv_obj_t * ui_ImageQRCodeBorder;
 extern lv_obj_t * ui_ScreenPin;
 extern lv_obj_t * ui_LabelPINValue;
 extern lv_obj_t * ui_Panel3;
 extern lv_obj_t * ui_Label12;
+
+extern lv_obj_t * ui_PanelMainMessage;
+extern lv_obj_t * ui_LabelMainMessage;
+
 void ui_event_Button1(lv_event_t * e);
 extern lv_obj_t * ui_Button1;
 extern lv_obj_t * ui_Label15;

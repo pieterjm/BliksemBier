@@ -28,7 +28,7 @@ void saveTuning(int32_t servoBack, int32_t servoClosed, int32_t servoOpen, int32
 
 bool getWifiStatus();
 
-void loadStartScreen();
+void backToAboutPageNow();
 
 bool getWebSocketStatus();
 
