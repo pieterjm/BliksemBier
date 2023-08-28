@@ -2,21 +2,14 @@
 #include <esp32_smartdisplay.h>
 #include "bliksembier.h"
 #include "ui.h"
-#ifdef SEESAW_SERVO
 #include "Adafruit_seesaw.h"
 #include "seesaw_servo.h"
-#else
 #include <ESP32Servo.h>
-#endif
 #include <Adafruit_PN532_NTAG424.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <TaskScheduler.h>
-
-SemaphoreHandle_t xPaidSemaphore = NULL;
-
-String paymentStateURL = "";
 
 // config variables
 int config_servo_back = 0;
@@ -25,38 +18,36 @@ int config_servo_open = 111;
 String config_wifi_ssid = "";
 String config_wifi_pwd = "";
 int config_tap_duration = 11000;
-int tap_duration = 0;
 String config_pin = String(CONFIG_PIN);
 String config_lnbitshost = "";
 String config_deviceid = "";
 
-// the LNURLs for the switches
+// the switches data
 #define BLIKSEMBIER_CFG_MAX_SWITCHES 3
 int config_numswitches = 0;
 String config_switchid[BLIKSEMBIER_CFG_MAX_SWITCHES];
 String config_label[BLIKSEMBIER_CFG_MAX_SWITCHES];
 int config_duration[BLIKSEMBIER_CFG_MAX_SWITCHES];
 
-
-#ifdef SEESAW_SERVO
+// servo and I2C config
 Adafruit_seesaw seesaw;
-seesaw_Servo servo(&seesaw);
-#else
+seesaw_Servo seesaw_servo(&seesaw);
 Servo servo;
-#endif
+bool bI2CServo = false; // set to true if the servo runs via I2C
 
-#ifdef NFC_PAYMENT
+// NFC reader config
 Adafruit_PN532 nfc(PN532_SCL,PN532_SDA);
-bool nfcEnabled = false;
+bool bNFCEnabled = false; // set to true van NFC reader is detected
 uint8_t success;
 uint8_t uid[] = {0, 0, 0, 0, 0, 0, 0}; 
 uint8_t uidLength;
-#endif
 
-int selectedItem = 0;
-String payment_request = "";
-String payment_hash = "";
-//lv_obj_t *ui_QrcodeLnurl = NULL; // the QR code object
+// data related to a payment
+int selectedItem = 0;  // the index of the selected button
+String payment_request = "";  // the payment request
+String payment_hash = ""; // the payment hash
+String paymentStateURL = ""; // the URL to retrieve state of the payment
+int tap_duration = 0;  // the duration of the tap
 
 // task functions
 void createInvoice();
@@ -69,7 +60,6 @@ void hidePanelAboutMessage();
 void hidePanelMainMessage();
 void expireInvoice();
 void backToAboutPage();
-
 
 // task scheduler
 Scheduler taskScheduler;
@@ -84,7 +74,6 @@ Task hidePanelMainMessageTask(TASK_IMMEDIATE, TASK_ONCE, &hidePanelMainMessage);
 Task expireInvoiceTask(TASK_IMMEDIATE, TASK_ONCE, &expireInvoice);
 Task backToAboutPageTask(TASK_IMMEDIATE, TASK_ONCE, &backToAboutPage);
 
-
 // defines for the config file
 #define BLIKSEMBIER_CFG_SSID "ssid"
 #define BLIKSEMBIER_CFG_WIFIPASS "wifipassword"
@@ -94,28 +83,29 @@ Task backToAboutPageTask(TASK_IMMEDIATE, TASK_ONCE, &backToAboutPage);
 #define BLIKSEMBIER_CFG_LNBITSHOST "lnbitshost"
 #define BLIKSEMBIER_CFG_DEVICEID "deviceid"
 #define BLIKSEMBIER_CFG_PIN "pin"
-
-// defines for the QR code
-#define QRCODE_PIXEL_SIZE 3
-#define QRCODE_X_OFFSET 10
-#define QRCODE_Y_OFFSET 10
-
-// WebSocket Events
-#define EVENT_PAID "paid"
-
-// Share HTTPClieny
-HTTPClient http;
-
+  
 void beerClose() {
-  servo.write(config_servo_close);
+  if ( bI2CServo) {
+    seesaw_servo.write(config_servo_close);
+  } else {
+    servo.write(config_servo_close);
+  }
 }
 
 void beerOpen() {
-  servo.write(config_servo_open);
+  if ( bI2CServo ) {
+    seesaw_servo.write(config_servo_open);
+  } else {     
+    servo.write(config_servo_open);
+  }
 }
 
 void beerClean() {
-  servo.write(config_servo_back);
+  if ( bI2CServo ) {
+    seesaw_servo.write(config_servo_back);
+  } else {
+    servo.write(config_servo_back);
+  }
 }
 
 void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,const char *lnbitshost) {
@@ -126,6 +116,9 @@ void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,c
   config_lnbitshost = String(lnbitshost);
 
   saveConfig();
+
+  // restart Wi-Fi
+  checkWiFiTask.restart();
 
 }
 
@@ -153,18 +146,9 @@ bool checkPIN(const char *pin) {
   return false;
 }
 
-bool getWifiStatus() {
-  if ( WiFi.status() == WL_CONNECTED ) {
-    return true;
-  } 
-  return false;
-}
-
 bool createPaymentRequest(String switchid) {
-// create an invoice, for now we ignore the min/max of the card
- 
   HTTPClient http;
- 
+
   String url = "https://";
   url += config_lnbitshost;
   url += "/bliksembier/api/v1/device/";
@@ -175,14 +159,12 @@ bool createPaymentRequest(String switchid) {
 
 
   String payload = "";
-  if ( xSemaphoreTake( xPaidSemaphore, portMAX_DELAY) == pdTRUE ) {
+  if ( true ) {
     http.begin(url);
     http.addHeader("Content-type","application/json");
     int statusCode = http.POST("");
     payload = http.getString();
     http.end();
-    xSemaphoreGive( xPaidSemaphore );
-
 
     // create invoice data
     if ( statusCode != HTTP_CODE_OK) {
@@ -193,7 +175,7 @@ bool createPaymentRequest(String switchid) {
     } 
   }
 
-  DynamicJsonDocument doc(2000); 
+  DynamicJsonDocument doc(2048);
   DeserializationError error = deserializeJson(doc, payload.c_str());
   if ( error != DeserializationError::Ok ) {
     Serial.println("Failed to parse invoice ");
@@ -209,6 +191,7 @@ bool createPaymentRequest(String switchid) {
 }
 
 void checkInvoice() {
+  HTTPClient http;
   int statusCode = 0;
   String payload = "";
 
@@ -221,15 +204,18 @@ void checkInvoice() {
 
   if (( statusCode == 200 ) && ( payload.equals("{\"status\":\"paid\"}"))) {
     checkInvoiceTask.disable();
-    checkNFCPaymentTask.disable();
+    if ( bNFCEnabled ) {
+      checkNFCPaymentTask.disable();
+    }
 
     beerScreen();
     notifyOrderReceivedTask.restartDelayed(10);
   } 
   else if (( statusCode == 200 ) && ( payload.equals("{\"status\":\"expired\"}"))) {
     checkInvoiceTask.disable();
-    checkNFCPaymentTask.disable();
-
+    if ( bNFCEnabled ) {
+      checkNFCPaymentTask.disable();
+    }
 
     expireInvoiceTask.disable();
     expireInvoice();
@@ -237,13 +223,15 @@ void checkInvoice() {
 
   } 
 
-  if ( checkInvoiceTask.isLastIteration() ) {
+  if ( checkInvoiceTask.isLastIteration() && bNFCEnabled ) {
     checkNFCPaymentTask.disable();
   }
 }
 
 void notifyOrderReceived()
 {
+  HTTPClient http;
+
   Serial.println("Order received");
   String url = "https://";
   url += config_lnbitshost;
@@ -251,16 +239,17 @@ void notifyOrderReceived()
   url += payment_hash;
   url += "/received";
 
-  if ( xSemaphoreTake( xPaidSemaphore, portMAX_DELAY) == pdTRUE ) {
+  if ( true ) {
     http.begin(url);
     int statusCode = http.GET();
     http.end();
-    xSemaphoreGive( xPaidSemaphore );
   }
 }
 
 void notifyOrderFulfilled()
 {
+  HTTPClient http;
+
   Serial.println("Order fulfilled");
   String url = "https://";
   url += config_lnbitshost;
@@ -268,14 +257,12 @@ void notifyOrderFulfilled()
   url += payment_hash;
   url += "/fulfilled";
 
-  if ( xSemaphoreTake( xPaidSemaphore, portMAX_DELAY) == pdTRUE ) {
+  if ( true ) {
     http.begin(url);
     int statusCode = http.GET();
     http.end();
-    xSemaphoreGive( xPaidSemaphore );
   }
 }
-
 
 void backToAboutPage()
 {
@@ -354,10 +341,9 @@ void setUIStatus(String shortMsg, String longMsg, bool bDisplayQRCode = false) {
   }
 }
 
-
-
-#ifdef NFC_PAYMENT
 bool make_lnurlw_withdraw(String lnurlw) {
+  HTTPClient http;
+
   if ( ! lnurlw.startsWith("lnurlw://")) {
     Serial.println("This is not an LNURLW");
     return false;
@@ -367,12 +353,11 @@ bool make_lnurlw_withdraw(String lnurlw) {
   String url = String("https://") + lnurlw.substring(9);
   
   String payload = "";
-  if ( xSemaphoreTake( xPaidSemaphore, portMAX_DELAY) == pdTRUE ) {
+  if ( true ) {
     http.begin(url);
     int statusCode = http.GET();
     payload = http.getString();
     http.end();
-    xSemaphoreGive( xPaidSemaphore );
 
     if ( statusCode != HTTP_CODE_OK ) {
       Serial.println("HTTP request not accepted for LNURLW");
@@ -382,7 +367,7 @@ bool make_lnurlw_withdraw(String lnurlw) {
   }
   Serial.printf("Received from card URL: %s\n",payload.c_str());
   
-  DynamicJsonDocument doc(2000);
+  DynamicJsonDocument doc(2048);
   DeserializationError error = deserializeJson(doc, payload.c_str());
   if ( error != DeserializationError::Ok ) {
     Serial.println("Failed to parse JSON ");
@@ -411,20 +396,17 @@ bool make_lnurlw_withdraw(String lnurlw) {
   url = callback + "?k1=" + k1 + "&pr=" + payment_request;
   Serial.println(url);            
 
-  if ( xSemaphoreTake( xPaidSemaphore, portMAX_DELAY) == pdTRUE ) {
+  if ( true ) {
     http.begin(url);
     int statusCode = http.GET();
     payload = http.getString();
     http.end();
-    xSemaphoreGive( xPaidSemaphore );
 
     if ( statusCode != HTTP_CODE_OK ) {
       Serial.println("HTTP request not accepted for callback");
       return false;
     }
   }
-
-  Serial.println(payload);
 
   error = deserializeJson(doc, payload.c_str());
   if ( error != DeserializationError::Ok ) {
@@ -442,7 +424,6 @@ bool make_lnurlw_withdraw(String lnurlw) {
     return false;
   }
 }
-#endif
 
 void hidePanelAboutMessage()
 {
@@ -467,9 +448,13 @@ void expireInvoice()
 
   hidePanelMainMessageTask.restartDelayed(TASK_SECOND * 5);
   backToAboutPageTask.restartDelayed(TASK_SECOND * 5);
-  checkNFCPaymentTask.disable();
+  if ( bNFCEnabled ) {
+    checkNFCPaymentTask.disable();
+  }
   checkInvoiceTask.disable();
-    
+
+  payment_hash = "";
+  payment_request = "";  
 
 }
 
@@ -495,19 +480,19 @@ void createInvoice()
   // Start checking the invoice  
   expireInvoiceTask.restartDelayed(TASK_SECOND * 60);
   checkInvoiceTask.restart();
-  checkNFCPaymentTask.restart();
+  if ( bNFCEnabled ) {
+    checkNFCPaymentTask.restart();
+  }
 
   // Update UI
   lv_obj_add_flag(ui_PanelMainMessage,LV_OBJ_FLAG_HIDDEN);
   lv_qrcode_update(ui_QrcodeLnurl, payment_request.c_str(), payment_request.length());
   lv_disp_load_scr(ui_ScreenMain);	
   lv_label_set_text(ui_LabelMainProduct,config_label[selectedItem].c_str());
-
-
 }
 
 void wantBierClicked(int item) {
-  Serial.println("Want Bier Clicked");
+  Serial.println("wantBierClicked");
   selectedItem = item;
 
   if ( config_numswitches == 0 ) {
@@ -516,12 +501,9 @@ void wantBierClicked(int item) {
   }
 
   // reset all parameters
-  if ( xSemaphoreTake( xPaidSemaphore, portMAX_DELAY) == pdTRUE ) {
-      payment_hash = "";
-      payment_request = "";
-      xSemaphoreGive(xPaidSemaphore);
-  }
-
+  payment_hash = "";
+  payment_request = "";
+  
   // set tap duration
   tap_duration = config_duration[item];
 
@@ -539,9 +521,8 @@ void loadConfig() {
   File file = LittleFS.open("/config.json", "r");
   if (file) {
 
-    //  StaticJsonDocument<2000> doc;
-    DynamicJsonDocument doc(2000);
     String content = file.readString();
+    DynamicJsonDocument doc(2048);
     DeserializationError error = deserializeJson(doc, content);
     file.close();
 
@@ -580,9 +561,7 @@ void saveConfig() {
     return;
   }
 
-  //StaticJsonDocument<2000> doc;
-  DynamicJsonDocument doc(2000);
-
+  DynamicJsonDocument doc(2048);
   doc[0]["name"] = BLIKSEMBIER_CFG_SSID;
   doc[0]["value"] = config_wifi_ssid;    
   doc[1]["name"] = BLIKSEMBIER_CFG_WIFIPASS;
@@ -610,6 +589,8 @@ void saveConfig() {
 
 bool getLNURLSettings(String deviceid) 
 {  
+  HTTPClient http;
+
   String config_url = "https://";
   config_url += config_lnbitshost;
   config_url += "/bliksembier/api/v1/device/";
@@ -618,26 +599,28 @@ bool getLNURLSettings(String deviceid)
 
 
   String payload = "";
-  if ( xSemaphoreTake( xPaidSemaphore, portMAX_DELAY) == pdTRUE ) {
+  if ( true ) {
     http.begin(config_url);
     int statusCode = http.GET();
     payload = http.getString();
     http.end();
-    xSemaphoreGive( xPaidSemaphore );
 
     if ( statusCode == HTTP_CODE_NOT_FOUND ) {
+      Serial.printf("StatusCode %d\n",statusCode);
+      setUIStatus("Incorrect DeviceID","Incorrect DeviceID. Check the configuration of the DeviceID and reconnect");
       return false;
     }
     else if ( statusCode == -1 ) {
+      setUIStatus("Configuraion error","Configuration error. Check of the LNbits host is correct and reconnect.");
       return false;
     }
     else if ( statusCode != HTTP_CODE_OK ) {
+      setUIStatus("Unknown error","Retrieving device configuration resulted in an unknown error");
       return false;
     }  
   }
 
-
-  StaticJsonDocument<2000> doc;
+  DynamicJsonDocument doc(2048);
   DeserializationError error = deserializeJson(doc, payload);
   if ( error.code() !=  DeserializationError::Ok ) {
     return false;
@@ -705,14 +688,6 @@ void setup()
   Serial.begin(115200);
   delay(2000);
 
-  if ( xPaidSemaphore == NULL )  // Check to confirm that the Serial Semaphore has not already been created.
-  {
-    xPaidSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage the Serial Port
-    if ( ( xPaidSemaphore ) != NULL ) {
-      xSemaphoreGive( ( xPaidSemaphore ) );  // Make the Serial Port available for use, by "Giving" the Semaphore.
-    }
-  } 
-
   // add tasks to task scheduler
   taskScheduler.addTask(createInvoiceTask);
   taskScheduler.addTask(checkInvoiceTask);
@@ -762,40 +737,43 @@ void setup()
  
 
   // connect to servo
-#ifdef SEESAW_SERVO
   if(!seesaw.begin() ) {
     Serial.println("Seesaw device not detected");
+    servo.attach(BIER_SERVO_PIN);
+    bI2CServo = false;
   }
-  else Serial.println("Seesaw succsfully started started");  
-#endif
-  servo.attach(BIER_SERVO_PIN);
+  else {
+    Serial.println("Seesaw succsfully started");  
+    seesaw_servo.attach(BIER_SERVO_PIN_I2C);
+    bI2CServo = true;
+  }
 
   beerClose();
 
   // initialize NFC reader
-#if NFC_PAYMENT
-  nfc.begin();  
-  uint32_t versiondata = nfc.getFirmwareVersion();
-  if (!versiondata) {
-    nfcEnabled = false;
-    Serial.print("Didn't find PN53x board"); 
-  } else {
-    nfcEnabled = true;
+  if ( bI2CServo ) {
+    nfc.begin();  
+    uint32_t versiondata = nfc.getFirmwareVersion();
+    if (!versiondata) {
+      bNFCEnabled = false;
+      Serial.print("Didn't find PN53x board"); 
+    } else {
+      bNFCEnabled = true;
 
-    // Got ok data, print it out!
-    Serial.print("Found chip PN53x");
-    Serial.println((versiondata >> 24) & 0xFF, HEX);
-    Serial.print("Firmware ver. ");
-    Serial.print((versiondata >> 16) & 0xFF, DEC);
-    Serial.print('.');
-    Serial.println((versiondata >> 8) & 0xFF, DEC);
+      // Got ok data, print it out!
+      Serial.print("Found chip PN53x");
+      Serial.println((versiondata >> 24) & 0xFF, HEX);
+      Serial.print("Firmware ver. ");
+      Serial.print((versiondata >> 16) & 0xFF, DEC);
+      Serial.print('.');
+      Serial.println((versiondata >> 8) & 0xFF, DEC);
 
-    // configure board to read RFID tags
-    nfc.SAMConfig();
+      // configure board to read RFID tags
+      nfc.SAMConfig();
 
-    Serial.println("Waiting for an ISO14443A Card ...");
+      Serial.println("Waiting for an ISO14443A Card ...");
+    }
   }
-#endif
 
 
   // set label in the About screen
@@ -821,7 +799,7 @@ void checkWiFi() {
         if ( bResult == true ) {
           setUIStatus("Ready to Serve!","Ready to serve!",true);
           checkWiFiTask.setInterval(TASK_SECOND * 15);
-        }
+        } 
       }      
       bConnected = true;
       break;
@@ -839,6 +817,7 @@ void checkWiFi() {
       break;
     case WL_NO_SHIELD:
       Serial.println("Wi-Fi device not initialized");
+      setUIStatus("Wi-Fi not initialized","Wi-Fi not initialized");
       if ( config_wifi_ssid.length() > 0 ) {
         WiFi.disconnect();
         WiFi.begin(config_wifi_ssid.c_str(),config_wifi_pwd.c_str());        
@@ -854,9 +833,12 @@ void checkWiFi() {
 }
 
 void checkNFCPayment() {
+  if ( bNFCEnabled == false ) {
+    return;
+  }
+
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength,NFC_TIMEOUT);
   if ( ! success ) {
-    //lv_obj_add_flag(ui_PanelMainMessage, LV_OBJ_FLAG_HIDDEN);
     return;
   }
   
@@ -868,6 +850,7 @@ void checkNFCPayment() {
   if ((uidLength != 7) && (uidLength != 4)) {
     lv_label_set_text(ui_LabelMainMessage, "INCOMPATIBLE CARD");
     lv_timer_handler();  
+    hidePanelMainMessageTask.restartDelayed(TASK_SECOND * 3);
     return;
   }
   
@@ -877,6 +860,7 @@ void checkNFCPayment() {
   if (!nfc.ntag424_isNTAG424()) {
     lv_label_set_text(ui_LabelMainMessage, "GO AWAY!!");
     lv_timer_handler();  
+    hidePanelMainMessageTask.restartDelayed(TASK_SECOND * 3);
     return;
   }
   
@@ -886,15 +870,26 @@ void checkNFCPayment() {
   uint8_t buffer[512];
   uint8_t bytesread = nfc.ntag424_ISOReadFile(buffer);
   String lnurlw = String((char *)buffer,bytesread);
+
+  if ( ! lnurlw.startsWith("lnurlw://")) {
+    lv_label_set_text(ui_LabelMainMessage, "NO LNURLW");
+    lv_timer_handler();  
+    hidePanelMainMessageTask.restartDelayed(TASK_SECOND * 3);
+    return;
+  }
+
+
   Serial.printf("Received %s from card\n",lnurlw.c_str());
   if ( make_lnurlw_withdraw(lnurlw) == false ) {
     lv_label_set_text(ui_LabelMainMessage, "PAYMENT FAILED");
     lv_timer_handler();  
+    hidePanelMainMessageTask.restartDelayed(TASK_SECOND * 3);
     return;
   }
       
   lv_label_set_text(ui_LabelMainMessage, "PAYMENT SUCCES");
   lv_timer_handler();    
+  hidePanelMainMessageTask.restartDelayed(TASK_SECOND * 3);
 }
 
 
@@ -903,5 +898,4 @@ void loop()
   // update handlers
   lv_timer_handler();  
   taskScheduler.execute();
-
 }
