@@ -1,9 +1,9 @@
 
 # BliksemBier, a Bitcoin Lightning enabled beertap
 
-BliksemBier is a beertap that accepts Bitcoin. BliksemBier consists of two components: na LNbits (https://github.com/lnbits/lnbits) extension and firmware for an ESP32-based smart display (made by Sunton). The firmware for the tap is created in such a way that can be used for different beertap types. For 5L draught kegs to professional beertaps. The following pictures illustrate some of the applications of BliksemBier.
+BliksemBier is a beertap that accepts Bitcoin through Lightning payments. Support for NFC card payments is also include. BliksemBier consists of two components: an LNbits (https://github.com/lnbits/lnbits) extension and firmware for an ESP32-based smart display (made by Sunton). The firmware for the tap is created in such a way that can be used for different beertap types. For 5L draught kegs to professional beertaps. The following pictures illustrate some of the applications of BliksemBier.
 
-<img src="Assets/bliksembier_tapvat.jpg" alt="Fixture for 5L draught keg" style="width: 40%" /> <img src="Assets/xaptap-mitbierglas.jpg" alt="Fixture for a standard beertap, the XapTap made by PlebTap." style="width: 40%" />
+<img src="Assets/bliksembier_tapvat.jpg" alt="Fixture for 5L draught keg" style="width: 30%" /> <img src="Assets/xaptap-mitbierglas.jpg" alt="Fixture for a standard beertap, the XapTap made by PlebTap." style="width: 30%" /> <img src="Assets/NFC/BLIKSEMBIER_NFC.JPEG" alt="Bliksembier with NFC support" style="width: 30%"/>
 
 If you want to obtain or create such a beertap, you can buy one or create one yourself (see the [build instructions](#build-instructions) for more details). All components, except for the metal sheet, are readily available. The design for the metal sheet is available <a href="Hardware/draught_key_sheet_bliksembier.dxf">here</a>. This should be laser cut out of a 1mm - 1.5mm stainless steel sheet. As that can be quite expensive for a few items, you can also obtain one from me. Contact <a href="mailto:bliksembier@meulenhoff.org">me</a> for details.
 
