@@ -4,11 +4,7 @@ from fastapi import Depends, HTTPException, Query, Request
 from loguru import logger
 
 from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
-from lnbits.core.crud import (
-    get_user, 
-    update_payment_extra,
-    get_standalone_payment
-)
+from lnbits.core.crud import get_user, update_payment_extra
 from lnbits.core.services import create_invoice
 from lnbits.decorators import (
     WalletTypeInfo,
