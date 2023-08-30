@@ -122,7 +122,31 @@ The following sections describe how to put everthing together.
 
 ## Preparing the PN532 NFC reader module
 
-The PN532 NFC reader module is connected through NFC with a JST SH / STEMMA QT connector. Depending on your application, make sure the cable is long enough so that the NFC reader can be placed where you want.  
+The PN532 NFC reader module is connected through I2C with a JST SH / STEMMA QT connector. First set the switches on the PN532 to the position that I2C mode is enabled. Also, depending on your application, make sure the cable is long enough so that the NFC reader can be placed where you want. The following picture shows which cable must be soldered to which port. 
 
 <IMG SRC="/Assets/NFC/PN532_CONNECTOR.PNG">
+
+When finished, the module should look like this:
+
+<IMF SRC="/Assets/NFC/PN532_SOLDERED.JPEG">
+
+Note that the cable is now a lot longer (my initial cable was way too short). The connector can be plugged into one end of the Seesaw module.
+
+## Preparing the Seesaw module
+
+The purpose of the Seesaw module is to pass through the I2C bus to the PN532 and more importantly, provide an additional PWM port to drive the servo.
+
+The yellow cable that (see standard build instructions) that provides the servo signal, is soldered to port 1 of the Seesaw module. 
+
+<IMG SRC="/Assets/NFC/PN532_SEESAW_CONNECTOR.JPEG">
+
+The Seesaw module is connected to the 'Temperature/Humidity Interface' of the display. That is the conector with the pins: 3.3V, IO21, IO22, GND. This connector is of a JST GH type, which means that a cable must be made that converts JST GH to JST SH. The mapping of the pins is provided in the following picture:
+
+<IMG SRC="/Assets/NFC/JST_STEMMA_QT_SH_GH_CONNECTORS.JPEG">
+
+Note that the color of the JST GH cable is not correct. It is just the cable I got and I did not change its configuration. Put a piece of shrink tube on each cable before soldering. The final result shoul like similar like this:
+
+<IMG SRC="/Assets/NFC/JST_CABLE_PIN_SOLDERED.JPEG">
+
+The cable can now be connected to the display and the other end to the Seesaw module.
 
