@@ -108,3 +108,21 @@ To compile the project using platformio core only, take the following steps
      platformio run --target upload
      ```
 
+## NFC support
+
+BliksemBier also supports NFC payments with a BoltCard (NTAG 424). Go the <A HREF="https://plebtag.com/shop/">PlebTag Shop</a> if you want to buy these cards wth a nice design. As the Sunton Smartdisplay is a bit limited on IO, both the NFC reader and the servo are connected through I2C. These are the required hardware components:
+
+  - 2 JST SH / STEMMA QT cables. Make sure the cable is long enough to place the NFC reader where you want.
+  - 1 JST GH 4-pin cable with a single connector (or just cut off the connector)
+  - 1 PN532 NFC reader module (https://www.kiwi-electronics.com/nl/pn532-nfc-rfid-breakout-board-3622)
+  - 1 Adafruit Attiny 1616 Seesaw breakout module (https://www.adafruit.com/product/5690)
+  - Isolation tap or shrink tube (to isolate the Seesaw module)
+
+The following sections describe how to put everthing together.
+
+## Preparing the PN532 NFC reader module
+
+The PN532 NFC reader module is connected through NFC with a JST SH / STEMMA QT connector. Depending on your application, make sure the cable is long enough so that the NFC reader can be placed where you want.  
+
+<IMG SRC="/Assets/NFC/PN532_CONNECTOR.PNG">
+
