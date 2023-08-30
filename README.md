@@ -138,7 +138,7 @@ The purpose of the Seesaw module is to pass through the I2C bus to the PN532 and
 
 The yellow cable that (see standard build instructions) that provides the servo signal, is soldered to port 1 of the Seesaw module. 
 
-<IMG SRC="/Assets/NFC/PN532_SEESAW_CONNECTOR.JPEG">
+<IMG SRC="/Assets/NFC/SEESAW_SERVO_PORT.JPEG">
 
 The Seesaw module is connected to the 'Temperature/Humidity Interface' of the display. That is the conector with the pins: 3.3V, IO21, IO22, GND. This connector is of a JST GH type, which means that a cable must be made that converts JST GH to JST SH. The mapping of the pins is provided in the following picture:
 
@@ -150,3 +150,8 @@ Note that the color of the JST GH cable is not correct. It is just the cable I g
 
 The cable can now be connected to the display and the other end to the Seesaw module.
 
+## Final assembly
+
+No connected everything together, the PN532 module to the Seesaw module and the Seesaw module to the smartdisplay. Provide electrical isolation for the Seesaw module so it does not create a short circuit. The final assembly should look similar to this:
+
+<IMG SRC="/Assets/NFC/PN532_SEESAW_TO_DISPLAY.JPEG">
