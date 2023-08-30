@@ -13,6 +13,8 @@ lv_obj_t * ui_ButtonAboutThree;
 lv_obj_t * ui_LabelAboutOne;
 lv_obj_t * ui_LabelAboutTwo;
 lv_obj_t * ui_LabelAboutThree;
+lv_obj_t * ui_PanelAboutMessage;
+lv_obj_t * ui_LabelAboutMessage;
 void ui_event_ButtonAboutOne(lv_event_t * e);
 void ui_event_ButtonAboutTwo(lv_event_t * e);
 void ui_event_ButtonAboutThree(lv_event_t * e);
@@ -31,6 +33,9 @@ lv_obj_t * ui_ScreenPin;
 lv_obj_t * ui_LabelPINValue;
 lv_obj_t * ui_Panel3;
 lv_obj_t * ui_Label12;
+lv_obj_t * ui_PanelMainMessage;
+lv_obj_t * ui_LabelMainMessage;
+lv_obj_t * ui_QrcodeLnurl;
 void ui_event_Button1(lv_event_t * e);
 lv_obj_t * ui_Button1;
 lv_obj_t * ui_Label15;
@@ -218,7 +223,8 @@ void ui_event_ButtonMainAbout(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
     lv_obj_t * target = lv_event_get_target(e);
     if(event_code == LV_EVENT_CLICKED) {
-        _ui_screen_change(ui_ScreenAbout, LV_SCR_LOAD_ANIM_NONE, 0, 0);
+        //_ui_screen_change(ui_ScreenAbout, LV_SCR_LOAD_ANIM_NONE, 0, 0);
+        ButtonMainBackClicked(e);
     }
 }
 void ui_event_Button1(lv_event_t * e)
@@ -602,18 +608,19 @@ void ui_ScreenAbout_screen_init(void)
     lv_obj_set_style_text_opa(ui_Label17, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_Label17, &ui_font_FontBoucherieBlock24, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+
     ui_Image1 = lv_img_create(ui_ScreenAbout);
 
 #if BB_ABOUT == 1
-    lv_img_set_src(ui_Image1, &ui_img_1898_logo256_png); // schaffstall
+    lv_img_set_src(ui_Image1, &ui_img_1898_logo256_png); // 1898 logo
 #elif BB_ABOUT == 2
-    lv_img_set_src(ui_Image1, &ui_img_schafstall256_png);  // schaffstall
+    lv_img_set_src(ui_Image1, &ui_img_schafstall256_png);  // schaffstall logo
 #elif BB_ABOUT == 3
-    lv_img_set_src(ui_Image1, &ui_img_wannabeer256_png);  // schaffstall
+    lv_img_set_src(ui_Image1, &ui_img_wannabeer256_png);  // wannabeer logo
 #elif BB_ABOUT == 4
-    lv_img_set_src(ui_Image1, &ui_img_bliksembier_lab3_png);  // schaffstall
+    lv_img_set_src(ui_Image1, &ui_img_bliksembier_lab3_png);  // lab3 logo
 #else
-    lv_img_set_src(ui_Image1, &ui_img_kanhetal256_png);
+    lv_img_set_src(ui_Image1, &ui_img_kanhetal256_png);  // kan het al logp
 #endif
 
     lv_obj_set_width(ui_Image1, LV_SIZE_CONTENT);   /// 256
@@ -697,6 +704,29 @@ void ui_ScreenAbout_screen_init(void)
     lv_obj_set_style_text_font(ui_LabelAboutThree, &ui_font_FontBoucherieBlock24, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 
+    ui_PanelAboutMessage = lv_obj_create(ui_ScreenAbout);
+    lv_obj_set_width(ui_PanelAboutMessage, 240);
+    lv_obj_set_height(ui_PanelAboutMessage, 240);
+    lv_obj_clear_flag(ui_PanelAboutMessage, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_set_align(ui_PanelAboutMessage, LV_ALIGN_CENTER);
+    lv_obj_set_style_bg_color(ui_PanelAboutMessage, lv_color_hex(BB_FGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(ui_PanelAboutMessage, lv_color_hex(BB_BGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui_PanelAboutMessage, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_PanelAboutMessage, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_add_flag(ui_PanelAboutMessage,LV_OBJ_FLAG_HIDDEN);
+
+    ui_LabelAboutMessage = lv_label_create(ui_PanelAboutMessage);
+    lv_obj_set_width(ui_LabelAboutMessage, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_LabelAboutMessage, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_align(ui_LabelAboutMessage, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_LabelAboutMessage, "FETCHING INVOICE");
+    lv_obj_set_style_text_color(ui_LabelAboutMessage, lv_color_hex(BB_BGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui_LabelAboutMessage, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_LabelAboutMessage, &ui_font_FontBoucherieBlock24, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+
+
+
     lv_obj_add_event_cb(ui_ButtonAboutOne, ui_event_ButtonAboutOne, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_ButtonAboutTwo, ui_event_ButtonAboutTwo, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_ButtonAboutThree, ui_event_ButtonAboutThree, LV_EVENT_ALL, NULL);
@@ -722,7 +752,7 @@ void ui_ScreenMain_screen_init(void)
     lv_obj_set_width(ui_Label1, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_Label1, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_Label1, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_Label1, "SCAN THE QR CODE");
+    lv_label_set_text(ui_Label1, "PAY FOR YOUR DRINK");
     lv_obj_set_style_text_color(ui_Label1, lv_color_hex(BB_FGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_Label1, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_Label1, &ui_font_FontBoucherieBlock24, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -731,7 +761,7 @@ void ui_ScreenMain_screen_init(void)
     lv_obj_set_width(ui_LabelMainProduct, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelMainProduct, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_LabelMainProduct, LV_ALIGN_TOP_MID);
-    lv_obj_set_y(ui_LabelMainProduct,80);
+    lv_obj_set_y(ui_LabelMainProduct,70);
     lv_label_set_text(ui_LabelMainProduct, "Test");
     lv_obj_set_style_text_color(ui_LabelMainProduct, lv_color_hex(BB_BGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_LabelMainProduct, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -783,15 +813,50 @@ void ui_ScreenMain_screen_init(void)
     lv_obj_set_width(ui_ImageQRCodeBorder, LV_SIZE_CONTENT);   /// 274
     lv_obj_set_height(ui_ImageQRCodeBorder, LV_SIZE_CONTENT);    /// 274
     lv_obj_set_x(ui_ImageQRCodeBorder, 5);
-    lv_obj_set_y(ui_ImageQRCodeBorder, 15);
+    lv_obj_set_y(ui_ImageQRCodeBorder, -5);
     lv_obj_set_align(ui_ImageQRCodeBorder, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_ImageQRCodeBorder, LV_OBJ_FLAG_ADV_HITTEST);     /// Flags
     lv_obj_clear_flag(ui_ImageQRCodeBorder, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+
+    // initialize the QR code
+    lv_color_t bg_color = lv_color_hex(0xFFFFFF);
+    lv_color_t fg_color = lv_color_hex(0x000000);
+    ui_QrcodeLnurl = lv_qrcode_create(ui_ScreenMain,240,fg_color,bg_color);
+    lv_obj_center(ui_QrcodeLnurl);
+    lv_obj_set_pos(ui_QrcodeLnurl,-3, -13);
+    lv_obj_set_style_border_width(ui_QrcodeLnurl, 0, 0);
+    lv_obj_add_flag(ui_QrcodeLnurl, LV_OBJ_FLAG_HIDDEN);
+
+    ui_PanelMainMessage = lv_obj_create(ui_ScreenMain);
+    lv_obj_set_y(ui_PanelMainMessage,150);
+    lv_obj_set_width(ui_PanelMainMessage, 256);
+    lv_obj_set_height(ui_PanelMainMessage, 45);
+    lv_obj_clear_flag(ui_PanelMainMessage, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_set_align(ui_PanelMainMessage, LV_ALIGN_CENTER);
+    lv_obj_set_style_bg_color(ui_PanelMainMessage, lv_color_hex(BB_FGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(ui_PanelMainMessage, lv_color_hex(BB_BGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui_PanelMainMessage, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_PanelMainMessage, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_add_flag(ui_PanelMainMessage,LV_OBJ_FLAG_HIDDEN);
+
+    ui_LabelMainMessage = lv_label_create(ui_PanelMainMessage);
+    lv_obj_set_width(ui_LabelMainMessage, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_LabelMainMessage, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_align(ui_LabelMainMessage, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_LabelMainMessage, "");
+    lv_obj_set_style_text_color(ui_LabelMainMessage, lv_color_hex(BB_BGCOLOR), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui_LabelMainMessage, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_LabelMainMessage, &ui_font_FontBoucherieBlock24, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+
+
+
 
     lv_obj_add_event_cb(ui_ButtonMainConfig, ui_event_ButtonMainConfig, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_ButtonMainAbout, ui_event_ButtonMainAbout, LV_EVENT_ALL, NULL);
 
 }
+
 void ui_ScreenPin_screen_init(void)
 {
     ui_ScreenPin = lv_obj_create(NULL);

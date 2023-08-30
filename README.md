@@ -1,9 +1,9 @@
 
 # BliksemBier, a Bitcoin Lightning enabled beertap
 
-BliksemBier is a beertap that accepts Bitcoin. BliksemBier consists of two components: na LNbits (https://github.com/lnbits/lnbits) extension and firmware for an ESP32-based smart display (made by Sunton). The firmware for the tap is created in such a way that can be used for different beertap types. For 5L draught kegs to professional beertaps. The following pictures illustrate some of the applications of BliksemBier.
+BliksemBier is a beertap that accepts Bitcoin through Lightning payments. Support for NFC card payments is also include. BliksemBier consists of two components: an LNbits (https://github.com/lnbits/lnbits) extension and firmware for an ESP32-based smart display (made by Sunton). The firmware for the tap is created in such a way that can be used for different beertap types. For 5L draught kegs to professional beertaps. The following pictures illustrate some of the applications of BliksemBier.
 
-<img src="Assets/bliksembier_tapvat.jpg" alt="Fixture for 5L draught keg" style="width: 40%" /> <img src="Assets/xaptap-mitbierglas.jpg" alt="Fixture for a standard beertap, the XapTap made by PlebTap." style="width: 40%" />
+<img src="Assets/bliksembier_tapvat.jpg" alt="Fixture for 5L draught keg" style="width: 30%" /> <img src="Assets/xaptap-mitbierglas.jpg" alt="Fixture for a standard beertap, the XapTap made by PlebTap." style="width: 30%" /> <img src="Assets/NFC/BLIKSEMBIER_NFC.JPEG" alt="Bliksembier with NFC support" style="width: 30%"/>
 
 If you want to obtain or create such a beertap, you can buy one or create one yourself (see the [build instructions](#build-instructions) for more details). All components, except for the metal sheet, are readily available. The design for the metal sheet is available <a href="Hardware/draught_key_sheet_bliksembier.dxf">here</a>. This should be laser cut out of a 1mm - 1.5mm stainless steel sheet. As that can be quite expensive for a few items, you can also obtain one from me. Contact <a href="mailto:bliksembier@meulenhoff.org">me</a> for details.
 
@@ -66,8 +66,16 @@ A list of components required to build a BliksemBier tap for 5L draught kegs:
     * 1 M4 Locking nut
   * A box for the backside (I used a Strapubox 2515)
   * soldering utensils and a small piece of heat shrink
+
+BliksemBier also supports NFC payments with a Boltcard compatible smartcard. If you want to enable that, you need the following additional components:
+
+  * 2 JST SH / STEMMA QT cables. Make sure the cable is long enough to place the NFC reader where you want.
+  * 1 JST GH 4-pin cable with a single connector (or just cut off the connector)
+  * 1 PN532 NFC reader module (https://www.kiwi-electronics.com/nl/pn532-nfc-rfid-breakout-board-3622)
+  * 1 Adafruit Attiny 1616 Seesaw breakout module (https://www.adafruit.com/product/5690)
+  * Isolation tap or shrink tube (to isolate the Seesaw module)
      
-## Build  instructions
+## Build  instructions, standard
 
 Both the ESP32 and the Servo are powered from the 5V source. As the servo is quite strong, a weak power source will result in glitches of the display. Make sure your power source is strong enough. Also it is important not to pass the current for the servo through the ESP32. This means that both the ESP32 and the Servo are directly powered from the same 5V power source. Use the following guidelines to connect everything.
 
@@ -81,6 +89,54 @@ Connecting everything together may require some soldering and heat shrink. A clo
 <img src="/Assets/bliksembier_internals.jpg" style="width: 40%" />
 
 The box for the backside of the tap is a converted strapubox that comes in two identical covers. I cut of the rims of the box, made a hole for the USBC connector and drilled four holes to mount the cover on the same bolts that mount the display to the metal fixture.
+
+## Build instructions, NFC support 
+
+BliksemBier also supports NFC payments with a BoltCard (NTAG 424). Go the <A HREF="https://plebtag.com/shop/">PlebTag Shop</a> if you want to buy these cards wth a nice design. As the Sunton Smartdisplay is a bit limited on IO, both the NFC reader and the servo are connected through I2C. 
+
+### Prepare the PN532 NFC reader module
+
+The PN532 NFC reader module is connected through I2C with a JST SH / STEMMA QT connector. First set the switches on the PN532 to the position that I2C mode is enabled. Also, depending on your application, make sure the cable is long enough so that the NFC reader can be placed where you want. The following picture shows which cable must be soldered to which port. 
+
+<IMG SRC="/Assets/NFC/PN532_CONNECTOR.PNG">
+
+When finished, the module should look like this:
+
+<IMF SRC="/Assets/NFC/PN532_SOLDERED.JPEG">
+
+Note that the cable is now a lot longer (my initial cable was way too short). The connector can be plugged into one end of the Seesaw module.
+
+### Prepare the Seesaw module
+
+The purpose of the Seesaw module is to pass through the I2C bus to the PN532 and more importantly, provide an additional PWM port to drive the servo.
+
+The yellow cable that (see standard build instructions) that provides the servo signal, is soldered to port 1 of the Seesaw module. 
+
+<IMG SRC="/Assets/NFC/SEESAW_SERVO_PORT.JPEG">
+
+The Seesaw module is connected to the 'Temperature/Humidity Interface' of the display. That is the conector with the pins: 3.3V, IO21, IO22, GND. This connector is of a JST GH type, which means that a cable must be made that converts JST GH to JST SH. A picture of both these cable types is shown below:
+
+<IMG SRC="/Assets/NFC/JST_STEMMA_QT_SH_GH_CONNECTORS.JPEG">
+
+The mapping of the pins is provided in the following picture:
+
+<IMG SRC="/Assets/NFC/JST_CABLE_PIN_MAPPING.JPEG">
+
+Note that the color of the JST GH cable is not correct. It is just the cable I got and I did not change its configuration. Put a piece of shrink tube on each cable before soldering. The final result shoul like similar like this:
+
+<IMG SRC="/Assets/NFC/JST_CABLE_PIN_SOLDERED.JPEG">
+
+The cable can now be connected to the display and the other end to the Seesaw module.
+
+### Assembly
+
+No connected everything together, the PN532 module to the Seesaw module and the Seesaw module to the smartdisplay. Provide electrical isolation for the Seesaw module so it does not create a short circuit. The final assembly should look similar to this:
+
+<IMG SRC="/Assets/NFC/PN532_SEESAW_TO_DISPLAY.JPEG">
+
+And a picture of the complete assembly with the Seesaw module isolated and fixed to the casing.
+
+<IMG SRC="/Assets/NFC/COMPLETE_ASSEMBLY_ISOLATED.JPEG">
 
 ## Compilation
 

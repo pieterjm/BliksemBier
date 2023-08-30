@@ -220,3 +220,7 @@ void ButtonFreeClicked(lv_event_t *e)
 {
 	freeBeerClicked();
 }
+
+void ButtonMainBackClicked(lv_event_t *e) {
+	backToAboutPageNow();
+}

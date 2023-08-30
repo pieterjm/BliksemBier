@@ -18,6 +18,8 @@ extern lv_obj_t * ui_ButtonAboutThree;
 extern lv_obj_t * ui_LabelAboutOne;
 extern lv_obj_t * ui_LabelAboutTwo;
 extern lv_obj_t * ui_LabelAboutThree;
+extern lv_obj_t * ui_PanelAboutMessage;
+extern lv_obj_t * ui_LabelAboutMessage;
 void ui_event_ButtonAboutOne(lv_event_t * e);
 void ui_event_ButtonAboutTwo(lv_event_t * e);
 void ui_event_ButtonAboutThree(lv_event_t * e);
@@ -30,12 +32,17 @@ extern lv_obj_t * ui_ButtonMainConfig;
 extern lv_obj_t * ui_Label4;
 void ui_event_ButtonMainAbout(lv_event_t * e);
 extern lv_obj_t * ui_ButtonMainAbout;
+extern lv_obj_t * ui_QrcodeLnurl;
 extern lv_obj_t * ui_Label18;
 extern lv_obj_t * ui_ImageQRCodeBorder;
 extern lv_obj_t * ui_ScreenPin;
 extern lv_obj_t * ui_LabelPINValue;
 extern lv_obj_t * ui_Panel3;
 extern lv_obj_t * ui_Label12;
+
+extern lv_obj_t * ui_PanelMainMessage;
+extern lv_obj_t * ui_LabelMainMessage;
+
 void ui_event_Button1(lv_event_t * e);
 extern lv_obj_t * ui_Button1;
 extern lv_obj_t * ui_Label15;
@@ -202,6 +209,7 @@ void ButtonAboutOneClicked(lv_event_t * e);
 void ButtonAboutTwoClicked(lv_event_t * e);
 void ButtonAboutThreeClicked(lv_event_t * e);
 void ButtonFreeClicked(lv_event_t * e );
+void ButtonMainBackClicked(lv_event_t * e);
 
 #if BB_ABOUT == 1 
     LV_IMG_DECLARE(ui_img_1898_logo256_png);  // 1898
@@ -210,7 +218,7 @@ void ButtonFreeClicked(lv_event_t * e );
 #elif BB_ABOUT == 3
     LV_IMG_DECLARE(ui_img_wannabeer256_png);  // wannabeer
 #elif BB_ABOUT == 4
-    LV_IMG_DECLARE(ui_img_bliksembier_lab3_png);  // wannabeer
+    LV_IMG_DECLARE(ui_img_bliksembier_lab3_png);  // lab 3
 #else
     LV_IMG_DECLARE(ui_img_kanhetal256_png);    // kan het al
 #endif
