@@ -114,9 +114,13 @@ The yellow cable that (see standard build instructions) that provides the servo 
 
 <IMG SRC="/Assets/NFC/SEESAW_SERVO_PORT.JPEG">
 
-The Seesaw module is connected to the 'Temperature/Humidity Interface' of the display. That is the conector with the pins: 3.3V, IO21, IO22, GND. This connector is of a JST GH type, which means that a cable must be made that converts JST GH to JST SH. The mapping of the pins is provided in the following picture:
+The Seesaw module is connected to the 'Temperature/Humidity Interface' of the display. That is the conector with the pins: 3.3V, IO21, IO22, GND. This connector is of a JST GH type, which means that a cable must be made that converts JST GH to JST SH. A picture of both these cable types is shown below:
 
 <IMG SRC="/Assets/NFC/JST_STEMMA_QT_SH_GH_CONNECTORS.JPEG">
+
+The mapping of the pins is provided in the following picture:
+
+<IMG SRC="/Assets/NFC/JST_CABLE_PIN_MAPPING.JPEG">
 
 Note that the color of the JST GH cable is not correct. It is just the cable I got and I did not change its configuration. Put a piece of shrink tube on each cable before soldering. The final result shoul like similar like this:
 
