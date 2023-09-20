@@ -224,3 +224,8 @@ void ButtonFreeClicked(lv_event_t *e)
 void ButtonMainBackClicked(lv_event_t *e) {
 	backToAboutPageNow();
 }
+
+void ButtonMainConfigClicked(lv_event_t *e) {
+	entered_pin = "";
+	toConfigPageNow();
+}

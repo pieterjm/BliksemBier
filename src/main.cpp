@@ -64,7 +64,7 @@ void backToAboutPage();
 // task scheduler
 Scheduler taskScheduler;
 Task createInvoiceTask(TASK_IMMEDIATE,1,&createInvoice);
-Task checkInvoiceTask(TASK_SECOND * 2, 310, &checkInvoice);
+Task checkInvoiceTask(TASK_SECOND * 3, 310, &checkInvoice);
 Task notifyOrderReceivedTask(TASK_IMMEDIATE,1,&notifyOrderReceived);
 Task notifyOrderFulfilledTask(TASK_IMMEDIATE,1,&notifyOrderFulfilled);
 Task checkWiFiTask(TASK_SECOND * 10, TASK_FOREVER, &checkWiFi);
@@ -268,6 +268,20 @@ void backToAboutPage()
 {
   lv_obj_add_flag(ui_PanelAboutMessage,LV_OBJ_FLAG_HIDDEN);
   lv_disp_load_scr(ui_ScreenAbout);	  
+  lv_timer_handler();      
+}
+
+void toConfigPageNow() 
+{
+  // disable the current expire Invoice task and expire the invoie right away
+  expireInvoiceTask.disable();
+  expireInvoice();
+
+  // disable the current backToAbout page task and go back now
+  backToAboutPageTask.disable();
+
+  lv_obj_add_flag(ui_PanelAboutMessage,LV_OBJ_FLAG_HIDDEN);
+  lv_disp_load_scr(ui_ScreenPin);	  
   lv_timer_handler();      
 }
 
@@ -842,9 +856,10 @@ void checkNFCPayment() {
     return;
   }
   
-  lv_label_set_text(ui_LabelMainMessage, "DETECTED NFC TAG");
+  lv_label_set_text(ui_LabelMainMessage, "DETECTED NFC TAG");  
   lv_obj_clear_flag(ui_PanelMainMessage, LV_OBJ_FLAG_HIDDEN);    
   lv_timer_handler();  
+  Serial.println("DETECTED NFC TAG");
   hidePanelMainMessageTask.restartDelayed(TASK_SECOND * 3);
 
   if ((uidLength != 7) && (uidLength != 4)) {
@@ -866,9 +881,12 @@ void checkNFCPayment() {
   
   lv_label_set_text(ui_LabelMainMessage, "DETECTED NTAG424");
   lv_timer_handler();  
+  Serial.println("DETECTED NTAG4 424");
   
   uint8_t buffer[512];
   uint8_t bytesread = nfc.ntag424_ISOReadFile(buffer);
+  Serial.printf("Bytes read = %d\n",bytesread);
+
   String lnurlw = String((char *)buffer,bytesread);
 
   if ( ! lnurlw.startsWith("lnurlw://")) {

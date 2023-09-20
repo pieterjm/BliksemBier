@@ -210,6 +210,7 @@ void ButtonAboutTwoClicked(lv_event_t * e);
 void ButtonAboutThreeClicked(lv_event_t * e);
 void ButtonFreeClicked(lv_event_t * e );
 void ButtonMainBackClicked(lv_event_t * e);
+void ButtonMainConfigClicked(lv_event_t * e);
 
 #if BB_ABOUT == 1 
     LV_IMG_DECLARE(ui_img_1898_logo256_png);  // 1898

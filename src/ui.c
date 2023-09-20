@@ -215,9 +215,10 @@ void ui_event_ButtonMainConfig(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
     lv_obj_t * target = lv_event_get_target(e);
     if(event_code == LV_EVENT_CLICKED) {
-        _ui_screen_change(ui_ScreenPin, LV_SCR_LOAD_ANIM_NONE, 0, 0);
+        ButtonMainConfigClicked(e);
     }
 }
+
 void ui_event_ButtonMainAbout(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);

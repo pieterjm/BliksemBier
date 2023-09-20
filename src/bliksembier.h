@@ -30,6 +30,9 @@ bool getWifiStatus();
 
 void backToAboutPageNow();
 
+void toConfigPageNow();
+
+
 bool getWebSocketStatus();
 
 void myDelay(uint32_t ms);
