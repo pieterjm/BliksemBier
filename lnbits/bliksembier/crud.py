@@ -21,7 +21,7 @@ async def create_device(data: CreateLnurldevice, req: Request) -> Lnurldevice:
         for _switch in data.switches:
             _switch.id = shortuuid.uuid()[:8]
             _switch.lnurl = lnurl_encode(
-                url
+                str(url)
                 + "?switch_id="
                 + str(_switch.id)
             )
@@ -53,7 +53,7 @@ async def update_device(
             if _switch.id is None:
                 _switch.id = shortuuid.uuid()[:8]            
                 _switch.lnurl = lnurl_encode(
-                    url
+                    str(url)
                     + "?switch_id="
                     + str(_switch.id)
                 )
