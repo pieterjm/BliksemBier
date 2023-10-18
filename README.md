@@ -10,7 +10,7 @@ BliksemBier is a beertap that accepts Bitcoin through Lightning payments. Suppor
 There are multiple options for acquiring a BliksemBier Beer Tap
 
   - Rent one or more bigger taps for your event. Contact <a href="https://bitcointaps.com/">BitcoinTaps</a> for more information on that.
-  - Buy a construction kit or a pre-built version in my <a href="https://node.wholestack.nl/apps/2xCVaLinrGMoAgBRN6VitX4f7uVM/settings/pos">Web Shop</a>. I encourage to build a tap as it is a great learning experience and not so difficult as it seems.
+  - Buy a construction kit or a pre-built version in my <a href="https://node.wholestack.nl/apps/2xCVaLinrGMoAgBRN6VitX4f7uVM/pos">Web Shop</a>. I encourage to build a tap as it is a great learning experience and not so difficult as it seems.
 
 Looking for other ways to build a beer tap? Contact <a href="mailto:bliksembier@meulenhoff.org">me</a> to discuss that.
 
