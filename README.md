@@ -14,11 +14,13 @@ There are multiple options for acquiring a BliksemBier Beer Tap
 
 Looking for other ways to build a beer tap? Contact <a href="mailto:bliksembier@meulenhoff.org">me</a> to discuss that.
 
-# Contact and support
+# Licensing, Contact and support
 
-If you want to contact me directly, send an e-mail to <a href="mailto:bliksembier@meulenhoff.org">bliksembier@meulenhoff.org</a>.
+This project is licensed as GNU GPLv3. If you want to use this project in your project, please contact me for a separate license. 
 
-You can also join the Telegram group (https://t.me/+NLCoqbPB_ro1NzRk). 
+Send e-mail to: <a href="mailto:bliksembier@meulenhoff.org">bliksembier@meulenhoff.org</a>
+
+Join the Telegram group dedicated to this project: https://t.me/+NLCoqbPB_ro1NzRk 
 
 # Installation
 
