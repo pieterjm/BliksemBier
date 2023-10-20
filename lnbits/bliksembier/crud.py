@@ -17,7 +17,7 @@ async def create_device(data: CreateLnurldevice, req: Request) -> Lnurldevice:
     device_key = urlsafe_short_hash()
 
     if data.switches:
-        url = req.url_for("bliksembier.lnurl_v2_params", device_id=device_id)
+        url = str(req.url_for("bliksembier.lnurl_v2_params", device_id=device_id))
         for _switch in data.switches:
             _switch.id = shortuuid.uuid()[:8]
             _switch.lnurl = lnurl_encode(
@@ -48,7 +48,7 @@ async def update_device(
 ) -> Lnurldevice:
     
     if data.switches:
-        url = req.url_for("bliksembier.lnurl_v2_params", device_id=device_id)
+        url = str(req.url_for("bliksembier.lnurl_v2_params", device_id=device_id))
         for _switch in data.switches:
             if _switch.id is None:
                 _switch.id = shortuuid.uuid()[:8]            

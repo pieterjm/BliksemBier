@@ -57,9 +57,6 @@ async def lnurl_v2_params(
 ):
     return await lnurl_params(request, device_id, switch_id)
 
-
-    return memo
-
 async def lnurl_params(
     request: Request,
     device_id: str,
@@ -101,9 +98,9 @@ async def lnurl_params(
 
     return {
         "tag": "payRequest",
-        "callback": request.url_for(
+        "callback": str(request.url_for(
             "bliksembier.lnurl_callback", paymentid=lnurldevicepayment.id
-        ),
+        )),
         "minSendable": price_msat,
         "maxSendable": price_msat,
         "metadata": create_payment_metadata(device,switch)
