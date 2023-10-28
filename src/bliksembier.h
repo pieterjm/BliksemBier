@@ -28,6 +28,11 @@ void saveTuning(int32_t servoBack, int32_t servoClosed, int32_t servoOpen, int32
 
 bool getWifiStatus();
 
+void backToAboutPage();
+
+void toConfigPage();
+
+
 bool getWebSocketStatus();
 
 void myDelay(uint32_t ms);

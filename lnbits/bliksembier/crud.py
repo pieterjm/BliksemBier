@@ -11,6 +11,8 @@ from . import db
 from .models import CreateLnurldevice, Lnurldevice, LnurldevicePayment
 from loguru import logger
 
+
+
 async def create_device(data: CreateLnurldevice, req: Request) -> Lnurldevice:
     logger.debug("create_device")
     device_id = shortuuid.uuid()[:8]
@@ -38,7 +40,7 @@ async def create_device(data: CreateLnurldevice, req: Request) -> Lnurldevice:
         ),
     )
 
-    device = await get_device(device_id, req)
+    device = await get_device(device_id)
     assert device, "Lnurldevice was created but could not be retrieved"
     return device
 
@@ -75,24 +77,22 @@ async def update_device(
             device_id,
         ),
     )
-    device = await get_device(device_id, req)
+    device = await get_device(device_id)
     assert device, "Lnurldevice was updated but could not be retrieved"
     return device
 
-
-async def get_device(device_id: str, req: Request) -> Optional[Lnurldevice]:
+async def get_device(device_id: str) -> Optional[Lnurldevice]:
     row = await db.fetchone(
         "SELECT * FROM bliksembier.device WHERE id = ?", (device_id,)
     )
     if not row:
         return None
-
     device = Lnurldevice(**row)
 
     return device
 
 
-async def get_devices(wallet_ids: List[str], req: Request) -> List[Lnurldevice]:
+async def get_devices(wallet_ids: List[str]) -> List[Lnurldevice]:
 
     q = ",".join(["?"] * len(wallet_ids))
     rows = await db.fetchall(
@@ -183,4 +183,19 @@ async def get_lnurlpayload(
         (lnurldevicepayment_payload,),
     )
     return LnurldevicePayment(**row) if row else None
+
+
+def create_payment_memo(device, switch) -> str:
+    memo = ""
+    if device.title:
+        memo += device.title
+    if switch.label:
+        memo += " "
+        memo += switch.label
+    return memo
+
+def create_payment_metadata(device, switch):
+    return json.dumps([["text/plain", create_payment_memo(device,switch)]])
+
+
 
