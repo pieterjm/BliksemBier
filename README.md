@@ -9,11 +9,13 @@ If you want to obtain or create such a beertap, you can buy one or create one yo
 
 <img src="Assets/bliksembier_fixture.jpg" style="width: 40%"/>
 
-## Contact and support
+## Contact, support and licensing
 
 If you want to contact me directly, send an e-mail to <a href="mailto:bliksembier@meulenhoff.org">bliksembier@meulenhoff.org</a>.
 
 You can also join the Telegram group (https://t.me/+NLCoqbPB_ro1NzRk). 
+
+This software is available under the GPL License (see LICENSE). If your application of BliksemBier requires and another type of license, contact me by sending an e-mail to <a href="mailto:bliksembier@meulenhoff.org">bliksembier@meulenhoff.org</a>. 
 
 ## Installation
 
