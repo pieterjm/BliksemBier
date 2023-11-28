@@ -15,7 +15,7 @@ If you want to contact me directly, send an e-mail to <a href="mailto:bliksembie
 
 You can also join the Telegram group (https://t.me/+NLCoqbPB_ro1NzRk). 
 
-This software is available under the GPL License (see LICENSE). If your application of BliksemBier requires and another type of license, contact me by sending an e-mail to <a href="mailto:bliksembier@meulenhoff.org">bliksembier@meulenhoff.org</a>. 
+This software is available under the GPL License (see [LICENSE](/LICENSE)). If your application of BliksemBier requires another type of license, contact me by sending an e-mail to <a href="mailto:bliksembier@meulenhoff.org">bliksembier@meulenhoff.org</a>. 
 
 ## Installation
 
