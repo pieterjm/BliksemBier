@@ -28,6 +28,7 @@ class Lnurldevice(BaseModel):
     currency: str
     switches: Optional[Json[List[LnurldeviceSwitch]]]
     timestamp: str
+    websocket: Optional[int]
 
     @classmethod
     def from_row(cls, row: Row) -> "Lnurldevice":

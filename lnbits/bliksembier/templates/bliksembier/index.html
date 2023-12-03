@@ -51,14 +51,13 @@
             <q-tr :props="props">
               <q-th style="width: 5%"></q-th>
               <q-th style="width: 5%"></q-th>
-              <q-th style="width: 5%"></q-th>
 
               <q-th
                 v-for="col in props.cols"
                 :key="col.name"
                 :props="props"
                 auto-width
-              >
+		>
                 <div v-if="col.name == 'id'"></div>
                 <div v-else>{{ col.label }}</div>
               </q-th>
@@ -92,20 +91,6 @@
                   <q-tooltip> Delete Device </q-tooltip>
                 </q-btn>
               </q-td>
-              <q-td>
-                <q-btn
-                  :disable="protocol == 'http:'"
-                  flat
-                  dense
-                  size="xs"
-                  icon="visibility"
-                  :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
-                  @click="openQrCodeDialog(props.row.id)"
-                  ><q-tooltip v-if="protocol == 'http:'">
-                    LNURLs only work over HTTPS </q-tooltip
-                  ><q-tooltip v-else> view LNURLS </q-tooltip></q-btn
-                >
-              </q-td>
               <q-td
                 v-for="col in props.cols"
                 :key="col.name"
@@ -113,7 +98,9 @@
                 auto-width
               >
                 <div v-if="col.name == 'id'"></div>
-                <div v-else>{{ col.value }}</div>
+		<div v-else-if="col.name == 'websocket' && col.value != 0 "><q-btn flat dense size="xs" color="red" icon="favorite"/></div>
+		<div v-else-if="col.name == 'websocket' && col.value == 0 "></div>
+		<div v-else>{{ col.value }}</div>
               </q-td>
             </q-tr>
           </template>
@@ -144,11 +131,7 @@
         <p>
           <select class="esp-select-board-type" name="esp-select-board-type">
             <option value="--">Select your board</option>
-            <option value="ESP32_3248S035C">ESP32_3248S035C (Capacitive touch)</option>
-            <option value="ESP32_3248S035R">ESP32_3248S035R (Resistive touch)</option>
-	    <option value="ESP32_3248S035C_INV">ESP32_3248S035C (Capacitive touch, Inverted)</option>`
-	    <option value="ESP32_3248S035C_LAB3">Lab 3</option>
-            <option value="schafstall">Schafstall</option>
+            <option value="ESP32_3248S035C" SELECTED>ESP32_3248S035C (Capacitive touch)</option>
           </select>
         </p>
         <p>
@@ -159,7 +142,7 @@
 	<p>
 	  After flashing, perform the following steps:
 	  <ol>
-	    <li>Click the Config button to enter the configuration screen. The default PIN is 123456.</li>
+	    <li>Click the top bar to enter the configuration screen. The default PIN is 123456.</li>
 	    <li>Enter Wi-Fi network SSID and password.</li>
 	    <li>Enter the hostname of this LNbits server: <i>{% raw %}{{hostname}}{% endraw %}</i> </li>
 	    <li>Enter the device id of the configured BliksemBier device.</li>
@@ -192,8 +175,8 @@
           unelevated
           color="primary"
           size="md"
-          @click="copyText(wslocation + '/api/v1/ws/' + settingsDialog.data.id, 'Link copied to clipboard!')"
-          >{% raw %}{{wslocation}}/api/v1/ws/{{settingsDialog.data.id}}{% endraw
+          @click="copyText(wslocation + '/bliksembier/api/v1/ws/' + settingsDialog.data.id, 'Link copied to clipboard!')"
+          >{% raw %}{{wslocation}}/bliksembier/api/v1/ws/{{settingsDialog.data.id}}{% endraw
           %}<q-tooltip> Click to copy URL </q-tooltip>
         </q-btn>
         <q-btn
@@ -401,7 +384,7 @@
     data: function () {
       return {
         tab: 'mails',
-        version: '813095',
+        version: '819591',
         hostname: window.location.host,
         protocol: window.location.protocol,
         location: window.location.hostname,
@@ -414,6 +397,12 @@
         lnurldeviceLinksObj: [],
         lnurldevicesTable: {
           columns: [
+            {
+              name: 'websocket',
+              align: 'left',
+              label: 'Status',
+              field: 'websocket'
+            },
             {
               name: 'title',
               align: 'left',
@@ -485,7 +474,7 @@
           window.location.protocol + '//' + window.location.host
         this.lnurlValue = this.qrCodeDialog.data.switches[0].lnurl
         this.websocketConnector(
-          'wss://' + window.location.host + '/api/v1/ws/' + lnurldevice_id
+          'wss://' + window.location.host + '/bliksembier/api/v1/ws/' + lnurldevice_id
         )
         this.qrCodeDialog.show = true
       },
@@ -656,10 +645,10 @@
         if ('WebSocket' in window) {
           self = this
           var ws = new WebSocket(websocketUrl)
-          self.updateWsMessage('Websocket connected')
+          self.updateWsMessage('Websocket connected')          
           ws.onmessage = function (evt) {
             var received_msg = evt.data
-            self.updateWsMessage('Message recieved: ' + received_msg)
+            self.updateWsMessage('Message received: ' + received_msg)
           }
           ws.onclose = function () {
             self.updateWsMessage('Connection closed')

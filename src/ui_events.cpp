@@ -220,3 +220,12 @@ void ButtonFreeClicked(lv_event_t *e)
 {
 	freeBeerClicked();
 }
+
+void ButtonMainBackClicked(lv_event_t *e) {
+	backToAboutPage();
+}
+
+void ButtonAboutConfigClicked(lv_event_t *e) {
+	entered_pin = "";
+	toConfigPage();
+}

@@ -19,6 +19,8 @@ from .crud import (
     get_payment,
     get_payment_by_p,
     update_payment,
+    create_payment_memo,
+    create_payment_metadata
 )
 
 @bliksembier_ext.get(
@@ -32,18 +34,6 @@ async def lnurl_v1_params(
     switch_id: str
 ):
     return await lnurl_params(request, device_id, switch_id)
-
-def create_payment_memo(device, switch) -> str:
-    memo = ""
-    if device.title:
-        memo += device.title
-    if switch.label:
-        memo += " "
-        memo += switch.label
-    return memo
-
-def create_payment_metadata(device, switch):
-    return json.dumps([["text/plain", create_payment_memo(device,switch)]])
 
 @bliksembier_ext.get(
     "/api/v2/lnurl/{device_id}",
@@ -63,7 +53,7 @@ async def lnurl_params(
     switch_id: str
 ):
     # find the device
-    device = await get_device(device_id, request)
+    device = await get_device(device_id)
     if not device:
         return {
             "status": "ERROR",
@@ -126,7 +116,7 @@ async def lnurl_callback(
     if payment.payhash == 'used':
         return {"status": "ERROR", "reason": "Payment already used."}
 
-    device = await get_device(payment.deviceid, request)
+    device = await get_device(payment.deviceid)
     if not device:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="device not found."
