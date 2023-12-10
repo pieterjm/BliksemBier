@@ -98,8 +98,8 @@
                 auto-width
               >
                 <div v-if="col.name == 'id'"></div>
-		<div v-else-if="col.name == 'websocket' && col.value != 0 "><q-btn flat dense size="xs" color="red" icon="favorite"/></div>
-		<div v-else-if="col.name == 'websocket' && col.value == 0 "></div>
+		<div v-else-if="col.name == 'websocket' && col.value != 0 "><q-btn flat dense size="xs" color="red" icon="check_circle"/></div>
+		<div v-else-if="col.name == 'websocket' && col.value == 0 "><q-btn flat dense size="xs" color="red" icon="unpublished"/></div>
 		<div v-else>{{ col.value }}</div>
               </q-td>
             </q-tr>
@@ -131,7 +131,7 @@
         <p>
           <select class="esp-select-board-type" name="esp-select-board-type">
             <option value="--">Select your board</option>
-            <option value="ESP32_3248S035C" SELECTED>ESP32_3248S035C (Capacitive touch)</option>
+            <option value="ESP32_3248S035C">ESP32_3248S035C (Capacitive touch)</option>
           </select>
         </p>
         <p>
