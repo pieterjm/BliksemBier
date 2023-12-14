@@ -141,10 +141,6 @@ extern lv_obj_t * ui_Label2;
 void ui_event_ButtonConfigBack(lv_event_t * e);
 extern lv_obj_t * ui_ButtonConfigBack;
 extern lv_obj_t * ui_Label16;
-extern lv_obj_t * ui_Label5;
-extern lv_obj_t * ui_LabelConfigServoBack;
-void ui_event_SliderConfigServoBack(lv_event_t * e);
-extern lv_obj_t * ui_SliderConfigServoBack;
 extern lv_obj_t * ui_Label3;
 extern lv_obj_t * ui_LabelConfigServoClosed;
 void ui_event_SliderConfigServoClosed(lv_event_t * e);
@@ -153,9 +149,6 @@ extern lv_obj_t * ui_Label8;
 extern lv_obj_t * ui_LabelConfigServoOpen;
 void ui_event_SliderConfigServoOpen(lv_event_t * e);
 extern lv_obj_t * ui_SliderConfigServoOpen;
-void ui_event_ButtonConfigServoBack(lv_event_t * e);
-extern lv_obj_t * ui_ButtonConfigServoBack;
-extern lv_obj_t * ui_Label7;
 void ui_event_ButtonConfigServoClose(lv_event_t * e);
 extern lv_obj_t * ui_ButtonConfigServoClose;
 extern lv_obj_t * ui_Label10;
@@ -195,7 +188,6 @@ void ButtonPinOKClicked(lv_event_t * e);
 void ButtonConfigConnectClicked(lv_event_t * e);
 void ButtonOKPINClicked(lv_event_t * e);
 void ButtoCancelPINClicked(lv_event_t * e);
-void ButtonConfigCleanClicked(lv_event_t * e);
 void ButtonConfigTunerClicked(lv_event_t * e);
 void ButtonConfigCloseClicked(lv_event_t * e);
 void ButtonConfigOpenClicked(lv_event_t * e);
@@ -209,18 +201,7 @@ void ButtonAboutConfigClicked(lv_event_t * e);
 void ButtonFreeClicked(lv_event_t * e );
 void ButtonMainBackClicked(lv_event_t * e);
 
-#if BB_ABOUT == 1 
-    LV_IMG_DECLARE(ui_img_1898_logo256_png);  // 1898
-#elif BB_ABOUT == 2
-    LV_IMG_DECLARE(ui_img_schafstall256_png);  // schaffstall
-#elif BB_ABOUT == 3
-    LV_IMG_DECLARE(ui_img_wannabeer256_png);  // wannabeer
-#elif BB_ABOUT == 4
-    LV_IMG_DECLARE(ui_img_bliksembier_lab3_png);  // lab 3
-#else
-    LV_IMG_DECLARE(ui_img_kanhetal256_png);    // kan het al
-#endif
-
+LV_IMG_DECLARE(ui_img_kanhetal256_png);    // kan het al
 LV_IMG_DECLARE(ui_img_329557545);    // assets/qr-code-slagschaduw-274x274-v2.png
 LV_IMG_DECLARE(ui_img_biertap256_png);    // assets/biertap256.png
 

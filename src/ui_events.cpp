@@ -161,37 +161,26 @@ void ButtoCancelPINClicked(lv_event_t * e)
 	lv_obj_add_flag(ui_PanelConfigPIN,LV_OBJ_FLAG_HIDDEN);
 }
 
-void ButtonConfigCleanClicked(lv_event_t * e)
-{
-	// Your code here
-	beerClean();
-}
-
 void ButtonConfigCloseClicked(lv_event_t * e)
 {
-	// Your code here
 	beerClose();
 }
 
 void ButtonConfigOpenClicked(lv_event_t * e)
 {
-	// Your code here
 	beerOpen();
 }
 
 void ButtonConfigSaveClicked(lv_event_t * e)
 {
-	// Your code here
-	int32_t servoBack = lv_slider_get_value(ui_SliderConfigServoBack);
 	int32_t servoClosed = lv_slider_get_value(ui_SliderConfigServoClosed);
 	int32_t servoOpen = lv_slider_get_value(ui_SliderConfigServoOpen);
 	int32_t tapDuration = lv_slider_get_value(ui_SliderConfigTapDuration);
-	saveTuning(servoBack,servoClosed,servoOpen,tapDuration);	
+	saveTuning(servoClosed,servoOpen,tapDuration);	
 }
 
 void ButtonScreenBierFlowingClicked(lv_event_t * e)
 {
-	// Your code here
 	beerClose();
 }
 

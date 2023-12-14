@@ -12,12 +12,11 @@
 #include <TaskScheduler.h>
 
 // config variables
-int config_servo_back = 0;
-int config_servo_close = 53;
-int config_servo_open = 111;
+int config_servo_close = 90;
+int config_servo_open = 90;
 String config_wifi_ssid = "";
 String config_wifi_pwd = "";
-int config_tap_duration = 11000;
+int config_tap_duration = 5000;
 String config_pin = String(CONFIG_PIN);
 String config_lnbitshost = "";
 String config_deviceid = "";
@@ -60,7 +59,7 @@ void checkWiFi();
 void checkNFCPayment();
 void hidePanelMainMessage();
 void expireInvoice();
-void backToAboutPage();
+void updateBeerTapProgress();
 
 // task scheduler
 Scheduler taskScheduler;
@@ -69,11 +68,11 @@ Task checkNFCPaymentTask(TASK_IMMEDIATE, TASK_FOREVER, &checkNFCPayment);
 Task hidePanelMainMessageTask(TASK_IMMEDIATE, TASK_ONCE, &hidePanelMainMessage);
 Task expireInvoiceTask(TASK_IMMEDIATE, TASK_ONCE, &expireInvoice);
 Task backToAboutPageTask(TASK_IMMEDIATE, TASK_ONCE, &backToAboutPage);
+Task beerTapProgressTask(TASK_IMMEDIATE, TAPPROGRESS_STEPS, &updateBeerTapProgress);
 
 // defines for the config file
 #define BLIKSEMBIER_CFG_SSID "ssid"
 #define BLIKSEMBIER_CFG_WIFIPASS "wifipassword"
-#define BLIKSEMBIER_CFG_SERVO_BACK "servoback"
 #define BLIKSEMBIER_CFG_SERVO_CLOSE "servoclose"
 #define BLIKSEMBIER_CFG_SERVO_OPEN "servoopen"
 #define BLIKSEMBIER_CFG_LNBITSHOST "lnbitshost"
@@ -96,14 +95,6 @@ void beerOpen() {
   }
 }
 
-void beerClean() {
-  if ( bI2CServo ) {
-    seesaw_servo.write(config_servo_back);
-  } else {
-    servo.write(config_servo_back);
-  }
-}
-
 void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,const char *lnbitshost) {
   
   config_wifi_ssid = String(ssid);
@@ -118,8 +109,7 @@ void connectBliksemBier(const char *ssid,const char *pwd, const char *deviceid,c
 
 }
 
-void saveTuning(int32_t servoBack, int32_t servoClosed, int32_t servoOpen, int32_t tapDuration) {
-  config_servo_back = servoBack;
+void saveTuning(int32_t servoClosed, int32_t servoOpen, int32_t tapDuration) {
   config_servo_close = servoClosed;
   config_servo_open = servoOpen;
   config_tap_duration = tapDuration;
@@ -181,24 +171,17 @@ void backToAboutPage()
   lv_timer_handler();      
 }
 
-void beerTimerProgress(lv_timer_t * timer)
+// update the slider of the progress bar while tapping
+void updateBeerTapProgress()
 {
-  int progress = lv_bar_get_value(ui_BarBierProgress);
-  progress += 10;
-  if ( progress > 100 ) {
-    progress = 100;
-  }
-  lv_bar_set_value(ui_BarBierProgress,progress, LV_ANIM_OFF);
+  lv_bar_set_value(ui_BarBierProgress,beerTapProgressTask.getRunCounter(), LV_ANIM_OFF);
+  lv_timer_handler();
 
-  if ( progress >=  100 ) {
+  if (beerTapProgressTask.isLastIteration() ) {
     beerClose();
     notifyOrderFulfilled();
-
     lv_obj_add_flag(ui_BarBierProgress,LV_OBJ_FLAG_HIDDEN);
-    lv_timer_handler();
-
     backToAboutPageTask.restartDelayed(TASK_SECOND * 3);
-
   }
 } 
 
@@ -213,11 +196,12 @@ void beerScreen()
 void beerStart()
 {
   notifyOrderReceived();
-  int tapstep = tap_duration / 10;
-  lv_timer_t *timer = lv_timer_create(beerTimerProgress, tapstep, NULL);
-  lv_timer_set_repeat_count(timer,10);
+  beerTapProgressTask.setInterval(tap_duration / TAPPROGRESS_STEPS);
+  beerTapProgressTask.restart();
+  lv_bar_set_value(ui_BarBierProgress,0, LV_ANIM_OFF);
   lv_obj_add_flag(ui_ButtonBierStart,LV_OBJ_FLAG_HIDDEN);
 	lv_obj_clear_flag(ui_BarBierProgress,LV_OBJ_FLAG_HIDDEN);
+  lv_timer_handler();
 	beerOpen();    
 }
 
@@ -349,8 +333,6 @@ void loadConfig() {
           config_servo_close = String(value).toInt();
         } else if ( name == BLIKSEMBIER_CFG_SERVO_OPEN ) {
           config_servo_open = String(value).toInt();
-        } else if ( name == BLIKSEMBIER_CFG_SERVO_BACK ) {
-          config_servo_back = String(value).toInt();
         } else if ( name == BLIKSEMBIER_CFG_LNBITSHOST ) {
           config_lnbitshost = String(value);     
         } else if (name == BLIKSEMBIER_CFG_PIN ) {
@@ -374,18 +356,16 @@ void saveConfig() {
   doc[0]["value"] = config_wifi_ssid;    
   doc[1]["name"] = BLIKSEMBIER_CFG_WIFIPASS;
   doc[1]["value"]= config_wifi_pwd;
-  doc[2]["name"] = BLIKSEMBIER_CFG_SERVO_BACK;
-  doc[2]["value"] = config_servo_back;
-  doc[3]["name"] = BLIKSEMBIER_CFG_SERVO_CLOSE;
-  doc[3]["value"] = config_servo_close;
-  doc[4]["name"] = BLIKSEMBIER_CFG_SERVO_OPEN;
-  doc[4]["value"] = config_servo_open;
-  doc[5]["name"] = BLIKSEMBIER_CFG_LNBITSHOST;
-  doc[5]["value"] = config_lnbitshost;
-  doc[6]["name"] = BLIKSEMBIER_CFG_PIN;
-  doc[6]["value"] = config_pin;
-  doc[7]["name"] = BLIKSEMBIER_CFG_DEVICEID;
-  doc[7]["value"] = config_deviceid;
+  doc[2]["name"] = BLIKSEMBIER_CFG_SERVO_CLOSE;
+  doc[2]["value"] = config_servo_close;
+  doc[3]["name"] = BLIKSEMBIER_CFG_SERVO_OPEN;
+  doc[3]["value"] = config_servo_open;
+  doc[4]["name"] = BLIKSEMBIER_CFG_LNBITSHOST;
+  doc[4]["value"] = config_lnbitshost;
+  doc[5]["name"] = BLIKSEMBIER_CFG_PIN;
+  doc[5]["value"] = config_pin;
+  doc[6]["name"] = BLIKSEMBIER_CFG_DEVICEID;
+  doc[6]["value"] = config_deviceid;
 
   String output = "";
   serializeJson(doc, output);
@@ -532,6 +512,7 @@ void setup()
   taskScheduler.addTask(hidePanelMainMessageTask);
   taskScheduler.addTask(expireInvoiceTask);
   taskScheduler.addTask(backToAboutPageTask);
+  taskScheduler.addTask(beerTapProgressTask);
 
   checkWiFiTask.restartDelayed(1000);
 
@@ -549,13 +530,11 @@ void setup()
   loadConfig();
 
   // set the values of the sliders
-  lv_slider_set_value(ui_SliderConfigServoBack,config_servo_back,LV_ANIM_OFF);
   lv_slider_set_value(ui_SliderConfigServoClosed,config_servo_close,LV_ANIM_OFF);
   lv_slider_set_value(ui_SliderConfigServoOpen,config_servo_open,LV_ANIM_OFF);
   lv_slider_set_value(ui_SliderConfigTapDuration,config_tap_duration,LV_ANIM_OFF);
   
-  // set the current valuues of the labels
-  lv_label_set_text_fmt(ui_LabelConfigServoBack,"%d",config_servo_back);
+  // set the current values of the labels
   lv_label_set_text_fmt(ui_LabelConfigServoClosed,"%d",config_servo_close);
   lv_label_set_text_fmt(ui_LabelConfigServoOpen,"%d",config_servo_open);
   lv_label_set_text_fmt(ui_LabelConfigTapDuration,"%d",config_tap_duration);
@@ -661,6 +640,9 @@ void checkWiFi() {
       break;
     case WL_NO_SHIELD:
       Serial.println("Wi-Fi device not initialized");
+      break;
+    case WL_CONNECT_FAILED:
+      Serial.println("WL_CONNECT_FAILED");
       break;
     default:
       Serial.printf("Unknown WiFi state %d\n",status);
